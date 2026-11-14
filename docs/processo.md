@@ -18,7 +18,7 @@ O ponto de partida foi o [Agente_Flashcards_Mandarim](https://github.com/Sanches
 | GPT-4o-mini com saída estruturada (Pydantic) | Os 7 campos da carta: palavra, pinyin, tradução, classe, frase, pinyin da frase, tradução da frase | Gemini com schema JSON; regras de pronúncia por idioma; validação depois do modelo |
 | Imagens do Pexels | O espaço para imagem na tela "Gerando" | Imagem ficou para depois |
 | Voz com edge-tts (vozes neurais da Microsoft, acessadas por biblioteca da comunidade) | Áudio separado para a palavra e para a frase | Gemini TTS pela API oficial, modelos reserva e voz do navegador como último recurso |
-| `.apkg` com genanki e 5 tipos de carta | A exportação para o Anki como objetivo | Ainda não feito no Karta; será escrito do zero |
+| `.apkg` com genanki e 5 tipos de carta (leitura, audição, imagem, tradução reversa, contexto) | A exportação para o Anki e **a ideia de vários tipos de cartão por palavra** | Escrito do zero em JavaScript (sql.js + JSZip), no navegador, com 3 tipos: leitura, audição e produção |
 | Trava de 10 palavras e 20 caracteres por lote (controle de custo) | — | Limites tratados também na resposta: cota, sobrecarga e tempo limite |
 | Script de terminal. Na branch principal, só mandarim; numa [branch de junho/2026](https://github.com/SanchesPinto/Agente_Flashcards_Mandarim/tree/feature/english-and-french-support), inglês e francês, com um arquivo de configuração por idioma (voz, nome do baralho, templates) | A mesma abordagem de configuração por idioma, que o Karta também adotou em `lib/idiomas.js` | App web com 5 idiomas, biblioteca, modo estudo e repetição espaçada |
 
@@ -80,7 +80,25 @@ A correção ([`lib/wav.js`](../lib/wav.js)) procura a marca `C2PA` seguida da c
 
 ---
 
+## Dia 2, à noite (14/11): exportação para o Anki
+**Do zero, a partir do formato.** Um `.apkg` é um ZIP com um banco SQLite (`collection.anki2`), um mapa de mídia e os arquivos de áudio numerados. Antes de escrever, abri um `.apkg` real para estudar o formato: tabelas, modelo, baralho e configurações padrão do Anki. Estudar o arquivo gerado não é reaproveitar código.
+
+| Decisão | Por quê |
+|---|---|
+| Gerar no navegador, com sql.js (SQLite em WebAssembly) e JSZip | Os áudios já estão no IndexedDB do navegador; mandar tudo ao servidor seria lento e desnecessário |
+| sql.js carregado de `public/`, copiado no `postinstall` | O empacotador do Next.js não lida bem com o sql.js |
+| Uma nota por palavra, com 3 cartões: leitura, audição, produção | A ideia de vários cartões por palavra veio do projeto do Gabriel (que usava 5). Escolhi 3: sem imagem no Karta, e cada tipo a mais multiplica as revisões diárias |
+| Cartão de audição só existe se houver áudio | Regra do próprio Anki (`req`): sem o campo exigido, o cartão não é criado |
+| IDs estáveis (hash do id do baralho) | Exportar de novo atualiza as cartas no Anki em vez de duplicar |
+| [`lib/apkg.js`](../lib/apkg.js) sem dependência do navegador | Permite um teste automático no Node |
+
+**O teste real mudou a ordem do áudio.** Na primeira exportação de verdade, a cota gratuita de voz acabou depois de 5 áudios: 3 palavras e 2 frases, ou seja, só 3 cartões de audição em 10 palavras. Como esse cartão só precisa do áudio da palavra, mudei a geração para fazer primeiro a palavra de todas as cartas e só depois as frases. Com a mesma cota de 5 áudios, a simulação dá 5 cartões de audição. O app continua parando no limite sem perder nada, e a próxima rodada segue de onde parou.
+
+**Verificação em duas camadas.** `npm run testar:apkg` monta um baralho de exemplo (uma carta sem áudio, outra com `<`, `>` e `&`), gera o arquivo, abre de volta e faz 10 verificações. Depois, abri o resultado com outra ferramenta (Python) e comparei com um `.apkg` de referência: mesmas tabelas, mesmos tipos de valor, mesmas chaves no modelo e no baralho, nenhum cartão órfão, todo `[sound:]` presente na mídia.
+
+---
+
 ## Próximas etapas
 - [x] Áudio de cada carta (Gemini TTS, com a voz do navegador como plano B)
-- [ ] Exportação `.apkg` para o Anki
+- [x] Exportação `.apkg` para o Anki
 - [ ] Deploy no Vercel

@@ -2,7 +2,7 @@
 
 Baralhos de flashcards de idiomas gerados por IA. Você escolhe o idioma, o nível e o tema. O Gemini monta as cartas com pronúncia, tradução e uma frase de exemplo no nível certo, e o app agenda as revisões por repetição espaçada.
 
-> **Status:** em desenvolvimento. A geração com IA, a biblioteca, o baralho, o modo estudo e o áudio estão funcionando. Próxima etapa: exportação para o Anki. Acompanhe pelo [diário de construção](docs/processo.md).
+> **Status:** em desenvolvimento. Geração com IA, biblioteca, modo estudo, áudio e exportação para o Anki funcionando. Próxima etapa: publicar online. Acompanhe pelo [diário de construção](docs/processo.md).
 
 | Baralho gerado pelo Gemini | Modo estudo |
 |---|---|
@@ -25,6 +25,7 @@ Montar um baralho bom de vocabulário dá trabalho: escolher as palavras do nív
 | API sem backend próprio | Rota `/api` que vira função serverless e guarda a chave fora do navegador |
 | Diagnóstico de problemas reais | [`scripts/diagnostico.mjs`](scripts/diagnostico.mjs), os 6 problemas do [primeiro teste](docs/processo.md#dia-2-1411-as-telas-e-o-primeiro-teste-real) e o [chiado causado por um certificado C2PA](docs/processo.md#dia-2-à-tarde-1411-áudio) |
 | Do design ao produto | [Mockups](docs/design) que viraram as telas reais |
+| Testes automáticos | [`scripts/testar-apkg.mjs`](scripts/testar-apkg.mjs): gera um `.apkg` de exemplo e confere 10 pontos do formato |
 
 ## Como funciona
 
@@ -63,6 +64,7 @@ Pré-requisitos: Node.js 20 ou mais novo e uma chave do Gemini ([aistudio.google
 npm install
 cp .env.example .env.local      # coloque sua chave em GEMINI_API_KEY
 npm run diagnostico             # confere a chave e mede quais modelos estão respondendo
+npm run testar:apkg             # testa a exportação para o Anki
 npm run dev
 ```
 
@@ -76,20 +78,35 @@ app/
   novo/page.jsx                Novo baralho
   baralho/[id]/page.jsx        Lista de cartas
   baralho/[id]/estudar/        Modo estudo
-  api/gerar/route.js           Função serverless que chama o Gemini
+  api/gerar/route.js           Função serverless que gera as cartas
+  api/voz/route.js             Função serverless que gera o áudio
+components/BotaoAudio.jsx      Ouvir (Gemini ou voz do navegador)
 lib/
   prompt.js                    Prompt e schema
   idiomas.js                   Regras por idioma (usadas pelo prompt e pelas telas)
   validar.js                   Validação do pedido e da resposta
   repeticao.js                 Repetição espaçada
-  armazenamento.js             Leitura e escrita no navegador
-scripts/diagnostico.mjs        Teste de chave e de modelos
+  armazenamento.js             Baralhos no navegador (localStorage)
+  audios.js                    Áudios no navegador (IndexedDB)
+  gerarAudios.js               Geração dos áudios, uma carta por vez
+  wav.js                       PCM para WAV e remoção do certificado C2PA
+  apkg.js                      Montagem do pacote do Anki
+  exportarApkg.js              Exportação no navegador
+scripts/
+  diagnostico.mjs              Teste de chave e de modelos de texto
+  diagnostico-voz.mjs          Teste dos modelos de voz
+  testar-apkg.mjs              Teste automático da exportação
+  copiar-sqljs.mjs             Copia o SQLite para public/ no npm install
 v1-python/                     Projeto original do Gabriel Pinto (Python), preservado
 docs/
   processo.md                  Diário de construção
   design/                      Mockups originais
   screenshots/                 Prints do app
 ```
+
+## Próximos passos
+- Deploy no Vercel, para usar sem instalar nada
+- GIF do app funcionando
 
 ## Como foi feito
 Construído com IA de ponta a ponta, a partir do projeto de Gabriel Pinto (veja [Origem](#origem)): mockups gerados com uma ferramenta de design com IA; código escrito com o Claude como agente, a partir das minhas decisões de produto e dos meus testes; Gemini como motor do produto. Detalhes no [diário](docs/processo.md).
