@@ -112,7 +112,22 @@ Num site público, a chave do Gemini no servidor seria usada por qualquer visita
 
 ---
 
+## Publicado (14/11) e os primeiros erros de uso real
+O Karta foi publicado no Vercel. No primeiro teste com um baralho de japonês, apareceram dois problemas:
+
+**1. "Água" em japonês falada em mandarim.** A primeira suspeita foi reaproveitamento de áudio entre baralhos, por ser o mesmo caractere (水). Conferi o código e descartei: cada áudio é salvo com o ID único da carta. A causa real era a entrada da voz: o app mandava só "水", sem idioma. O kanji é igual em chinês e japonês, e o modelo chutou mandarim. Palavras com hiragana não sofriam com isso, porque hiragana só existe em japonês.
+
+| Correção | Por quê |
+|---|---|
+| A rota de voz informa o idioma (`languageCode`) e tenta sem ele se o modelo recusar | Diz ao modelo qual língua falar |
+| No japonês, palavra sem kana vai para a voz pela leitura em hiragana ([`lib/textoVoz.js`](../lib/textoVoz.js)) | Garante a língua certa mesmo se o campo de idioma for ignorado |
+| Cada áudio guarda o texto que o gerou | Só os áudios cujo texto mudou são refeitos: no teste, apenas 水 em japonês. Nada de gastar a cota gerando tudo de novo |
+
+**2. Verso das cartas inconsistente.** O verso mostrava a palavra pequena no canto e a pronúncia grande no centro; no japonês, o kanji ia para o canto e o hiragana para o centro. Agora todos os idiomas seguem o mesmo padrão da frente: a palavra grande no centro, a pronúncia logo abaixo. Em palavras escritas só em kana, a leitura não repete a palavra (mostra só o romaji).
+
+---
+
 ## Próximas etapas
 - [x] Áudio de cada carta (Gemini TTS, com a voz do navegador como plano B)
 - [x] Exportação `.apkg` para o Anki
-- [ ] Deploy no Vercel
+- [x] Deploy no Vercel
