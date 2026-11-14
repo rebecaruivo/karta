@@ -5,20 +5,11 @@
 
 import { GoogleGenAI } from "@google/genai";
 import { writeFileSync, mkdirSync } from "node:fs";
+import { pcmParaWav, removerCertificadoC2PA } from "../lib/wav.js";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const TEXTO = "你好，我喜欢吃苹果。"; // "Olá, eu gosto de comer maçã."
 const VOZ = "Kore";
-
-// O Gemini devolve áudio PCM cru (24 kHz, 16 bits, mono). Para tocar, precisa de um cabeçalho WAV.
-function pcmParaWav(pcm, taxa = 24000) {
-  const h = Buffer.alloc(44);
-  h.write("RIFF", 0); h.writeUInt32LE(36 + pcm.length, 4); h.write("WAVE", 8);
-  h.write("fmt ", 12); h.writeUInt32LE(16, 16); h.writeUInt16LE(1, 20); h.writeUInt16LE(1, 22);
-  h.writeUInt32LE(taxa, 24); h.writeUInt32LE(taxa * 2, 28); h.writeUInt16LE(2, 32); h.writeUInt16LE(16, 34);
-  h.write("data", 36); h.writeUInt32LE(pcm.length, 40);
-  return Buffer.concat([h, pcm]);
-}
 
 // Procura o primeiro trecho de áudio em base64 em qualquer formato de resposta
 function acharAudio(obj) {
@@ -53,7 +44,7 @@ for (const modelo of modelos) {
     const audio = acharAudio(r);
     if (!audio) throw new Error("resposta sem áudio");
     const arq = `amostras-voz/${modelo}-generateContent.wav`;
-    writeFileSync(arq, pcmParaWav(Buffer.from(audio.data, "base64")));
+    writeFileSync(arq, pcmParaWav(removerCertificadoC2PA(Buffer.from(audio.data, "base64")).pcm));
     console.log(`✓ ${modelo} · generateContent · ${Date.now() - inicio} ms · ${audio.mimeType || "?"} → ${arq}`);
   } catch (e) {
     console.log(`✗ ${modelo} · generateContent · ${motivo(e)}`);
@@ -71,7 +62,7 @@ for (const modelo of modelos) {
     const audio = acharAudio(r);
     if (!audio) throw new Error("resposta sem áudio: " + JSON.stringify(r).slice(0, 120));
     const arq = `amostras-voz/${modelo}-interactions.wav`;
-    writeFileSync(arq, pcmParaWav(Buffer.from(audio.data, "base64")));
+    writeFileSync(arq, pcmParaWav(removerCertificadoC2PA(Buffer.from(audio.data, "base64")).pcm));
     console.log(`✓ ${modelo} · interactions · ${Date.now() - inicio} ms · ${audio.mime_type || audio.mimeType || "?"} → ${arq}`);
   } catch (e) {
     console.log(`✗ ${modelo} · interactions · ${motivo(e)}`);

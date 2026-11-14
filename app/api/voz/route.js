@@ -3,7 +3,7 @@
 // novas tentativas em sobrecarga e tempo limite por chamada.
 
 import { GoogleGenAI } from "@google/genai";
-import { pcmParaWav } from "@/lib/wav";
+import { pcmParaWav, removerCertificadoC2PA } from "@/lib/wav";
 
 const MODELOS = [
   process.env.GEMINI_TTS_MODEL || "gemini-3.8-flash-tts",
@@ -43,7 +43,10 @@ export async function POST(request) {
         const dados = r.candidates?.[0]?.content?.parts?.find((p) => p.inlineData)?.inlineData?.data;
         if (!dados) throw Object.assign(new Error("Resposta sem áudio."), { status: 500 });
 
-        const wav = pcmParaWav(Buffer.from(dados, "base64"));
+        // Remove o certificado C2PA que alguns modelos colam no fim do áudio (senão vira chiado)
+        const { pcm, removidos } = removerCertificadoC2PA(Buffer.from(dados, "base64"));
+        if (removidos) console.log(`[voz] ${modelo}: ${removidos} bytes de certificado C2PA removidos`);
+        const wav = pcmParaWav(pcm);
         return new Response(wav, {
           headers: { "Content-Type": "audio/wav", "X-Modelo": modelo, "Cache-Control": "no-store" },
         });
