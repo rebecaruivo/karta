@@ -82,3 +82,9 @@ h1 { font-family: 'Outfit', sans-serif; font-size: 36px; margin: 0 0 4px; }
 .grupo { margin-bottom: 36px; }
 .grupo h2 { font-size: 20px; margin: 0 0 14px; }
 .grupo h2 .mu { font-weight: 400; }
+
+/* Áudio */
+.ch.audio { padding: 4px 12px; font-size: 13px; margin-top: 6px; }
+.painel-audio { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+.cp { font-size: 12px; padding: 4px 10px; border-radius: 999px; border: 1.5px solid rgba(29,27,46,.3); color: var(--suave); background: #fff; }
+.cp.er { border: 1.5px dashed var(--tinta); color: var(--tinta); font-weight: 700; }

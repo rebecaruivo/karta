@@ -6,6 +6,8 @@ import Link from "next/link";
 import { obterBaralho, salvarBaralho } from "@/lib/armazenamento";
 import { responder, montarFila, RESPOSTAS } from "@/lib/repeticao";
 import { IDIOMAS } from "@/lib/idiomas";
+import { chaveAudio } from "@/lib/audios";
+import BotaoAudio from "@/components/BotaoAudio";
 
 export default function Estudar() {
   const { id } = useParams();
@@ -96,11 +98,18 @@ export default function Estudar() {
               <span className="z" style={{ fontSize: 22 }}>{carta.palavra}</span>
             </div>
             <p className="d leitura">{carta.leitura}</p>
+            {/* Toca a palavra sozinho ao virar a carta (virar já é um clique, então o navegador permite) */}
+            <div style={{ margin: "4px 0 12px" }}>
+              <BotaoAudio key={carta.id} chave={chaveAudio(carta.id, "palavra")} texto={carta.palavra} codigoVoz={cfg.codigoVoz} autoTocar />
+            </div>
             <p className="traducao">{carta.traducao} <span className="tg">{carta.classe}</span></p>
             <div className="exemplo">
               <p className="z" style={{ fontSize: 20, margin: 0 }}>{carta.exemplo}</p>
               <p className="mu" style={{ margin: "4px 0 0" }}>{carta.exemploLeitura}</p>
               <p className="mu" style={{ margin: "4px 0 0" }}>{carta.exemploTraducao}</p>
+              <div style={{ marginTop: 10 }}>
+                <BotaoAudio key={carta.id + "-ex"} chave={chaveAudio(carta.id, "exemplo")} texto={carta.exemplo} codigoVoz={cfg.codigoVoz} rotulo="Ouvir frase" />
+              </div>
             </div>
           </>
         )}
