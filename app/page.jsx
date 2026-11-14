@@ -5,6 +5,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { listarBaralhos } from "@/lib/armazenamento";
 import { IDIOMAS } from "@/lib/idiomas";
+import { carregarDemo } from "@/lib/demo";
+import { useRouter } from "next/navigation";
 
 function tom(pct) {
   if (pct >= 50) return "tom-2";
@@ -16,6 +18,20 @@ export default function Biblioteca() {
   const [baralhos, setBaralhos] = useState(null);
   const [filtro, setFiltro] = useState("todos");
   const [busca, setBusca] = useState("");
+  const [abrindoDemo, setAbrindoDemo] = useState(false);
+  const [erroDemo, setErroDemo] = useState(null);
+  const router = useRouter();
+
+  async function abrirDemo() {
+    setAbrindoDemo(true);
+    try {
+      const b = await carregarDemo();
+      router.push(`/baralho/${b.id}`);
+    } catch (e) {
+      setErroDemo(e.message);
+      setAbrindoDemo(false);
+    }
+  }
 
   // localStorage só existe no navegador, por isso a leitura fica no useEffect
   useEffect(() => setBaralhos(listarBaralhos()), []);
@@ -45,7 +61,14 @@ export default function Biblioteca() {
         <div className="vazio">
           <p className="d" style={{ fontSize: 22, fontWeight: 700, margin: "0 0 8px" }}>Nenhum baralho ainda</p>
           <p className="mu" style={{ marginBottom: 20 }}>Escolha um idioma e um tema, e a IA monta as cartas para você.</p>
-          <Link href="/novo" className="btn">Criar o primeiro baralho</Link>
+          <div className="acoes" style={{ justifyContent: "center" }}>
+            <button className="btn" onClick={abrirDemo} disabled={abrindoDemo}>
+              {abrindoDemo ? "Abrindo…" : "Ver baralho de exemplo"}
+            </button>
+            <Link href="/novo" className="bo">Criar meu baralho</Link>
+          </div>
+          {erroDemo && <p className="erro" style={{ marginTop: 16 }}>{erroDemo}</p>}
+          <p className="mu" style={{ marginTop: 16, fontSize: 13 }}>O exemplo funciona sem chave. Para criar baralhos, você vai precisar da sua chave gratuita do Gemini.</p>
         </div>
       ) : (
         <>
