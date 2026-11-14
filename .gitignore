@@ -15,3 +15,8 @@ amostras-voz/
 __pycache__/
 v1-python/media_temp/
 v1-python/audios_temp/
+
+# Copiado do node_modules no postinstall
+public/sqljs/
+# Saída do teste da exportação
+amostra.apkg
