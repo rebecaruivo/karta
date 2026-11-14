@@ -98,6 +98,20 @@ A correção ([`lib/wav.js`](../lib/wav.js)) procura a marca `C2PA` seguida da c
 
 ---
 
+## Preparando para publicar: de quem é a chave?
+Num site público, a chave do Gemini no servidor seria usada por qualquer visitante. Com a camada gratuita não há risco de cobrança, mas a cota poderia acabar justamente quando um recrutador abrisse o app. Avaliei três opções: deixar aberto, exigir um código de acesso, ou cada visitante usar a própria chave. Escolhi a terceira, com um baralho de exemplo:
+
+| Peça | Como funciona |
+|---|---|
+| Baralho de exemplo em `public/demo` | Abre na hora, sem chave e sem cota. Os IDs das cartas ganham o prefixo `demo-` ao importar, para não misturar com baralhos reais |
+| Chave do visitante ([`lib/chave.js`](../lib/chave.js)) | Fica só no navegador dele e vai no cabeçalho `x-gemini-key` de cada pedido |
+| Escolha da chave no servidor ([`lib/chaveServidor.js`](../lib/chaveServidor.js)) | Usa a do visitante; se não houver, a do `.env.local` (só existe no meu computador). No Vercel nenhuma chave é configurada |
+| Tela de Configurações | Explica como criar a chave e como ela é usada; permite remover a qualquer momento |
+
+**Um segundo certificado C2PA.** Ao conferir o `.apkg` do exemplo, encontrei de novo um certificado C2PA nos áudios, agora assinado pela Anthropic ("Anthropic Claude Content Signing"): os arquivos de `public/demo` passaram pelo ambiente do Claude, que assina o que gera. A diferença para o caso do Gemini é que aqui o certificado está num bloco próprio do formato WAV, depois do fim do áudio indicado no cabeçalho. Os tocadores pulam esse bloco, então não há chiado. É o jeito padrão de embutir procedência num WAV, e ele documenta que o arquivo passou por uma IA.
+
+---
+
 ## Próximas etapas
 - [x] Áudio de cada carta (Gemini TTS, com a voz do navegador como plano B)
 - [x] Exportação `.apkg` para o Anki

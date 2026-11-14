@@ -22,7 +22,7 @@ Montar um baralho bom de vocabulário dá trabalho: escolher as palavras do nív
 | Engenharia de prompt | [`lib/prompt.js`](lib/prompt.js): instrução de sistema, regras por idioma e schema de saída |
 | Saída estruturada e validação | Schema JSON imposto ao modelo + [`lib/validar.js`](lib/validar.js) |
 | Orquestração de modelos com resiliência | [`app/api/gerar/route.js`](app/api/gerar/route.js): novas tentativas, modelos reserva, tempo limite |
-| API sem backend próprio | Rota `/api` que vira função serverless e guarda a chave fora do navegador |
+| API sem backend próprio | Rotas `/api` que viram funções serverless; cada visitante usa a própria chave, então a cota do projeto não é exposta |
 | Diagnóstico de problemas reais | [`scripts/diagnostico.mjs`](scripts/diagnostico.mjs), os 6 problemas do [primeiro teste](docs/processo.md#dia-2-1411-as-telas-e-o-primeiro-teste-real) e o [chiado causado por um certificado C2PA](docs/processo.md#dia-2-à-tarde-1411-áudio) |
 | Do design ao produto | [Mockups](docs/design) que viraram as telas reais |
 | Testes automáticos | [`scripts/testar-apkg.mjs`](scripts/testar-apkg.mjs): gera um `.apkg` de exemplo e confere 10 pontos do formato |
@@ -55,6 +55,9 @@ Estudo: a repetição espaçada decide quando cada carta volta
 | Erro 503 e falha de rede: nova tentativa. Erro 401 e 429: para | Só repete o que esperar resolve |
 | `localStorage` em vez de banco | MVP sem login. Limite: os dados ficam num navegador só |
 | Repetição espaçada própria | Regra simples e explicável: errou, volta na hora; acertou com segurança, o intervalo cresce 2,5× |
+
+## Usando sem instalar
+No site publicado, abra o **baralho de exemplo** direto na biblioteca. Para criar os seus baralhos, cole a sua chave gratuita do Gemini em **Configurações**: ela fica só no seu navegador. Detalhes da decisão no [diário](docs/processo.md#preparando-para-publicar-de-quem-é-a-chave).
 
 ## Como rodar
 
