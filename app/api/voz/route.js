@@ -5,6 +5,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { pcmParaWav, removerCertificadoC2PA } from "@/lib/wav";
 import { escolherChave, respostaSemChave } from "@/lib/chaveServidor";
+import { IDIOMAS } from "@/lib/idiomas";
 
 export const maxDuration = 60;
 
@@ -22,7 +23,9 @@ const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
 export async function POST(request) {
   const { chave } = escolherChave(request);
   if (!chave) return respostaSemChave();
-  const { texto } = (await request.json().catch(() => ({}))) || {};
+  const { texto, idioma } = (await request.json().catch(() => ({}))) || {};
+  // Idioma explícito: sem ele, um kanji como 水 pode sair em mandarim
+  const codigoIdioma = IDIOMAS[idioma]?.codigoVoz;
   if (typeof texto !== "string" || !texto.trim() || texto.length > LIMITE_TEXTO) {
     return Response.json({ erro: `Texto inválido (1 a ${LIMITE_TEXTO} caracteres).` }, { status: 400 });
   }
@@ -31,6 +34,7 @@ export async function POST(request) {
   let ultimo = null;
 
   for (const modelo of MODELOS) {
+    let comIdioma = Boolean(codigoIdioma);
     for (let t = 1; t <= 2; t++) {
       try {
         const r = await ai.models.generateContent({
@@ -38,7 +42,10 @@ export async function POST(request) {
           contents: texto.trim(),
           config: {
             responseModalities: ["AUDIO"],
-            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: VOZ } } },
+            speechConfig: {
+              voiceConfig: { prebuiltVoiceConfig: { voiceName: VOZ } },
+              ...(comIdioma ? { languageCode: codigoIdioma } : {}),
+            },
             httpOptions: { timeout: 20_000 },
           },
         });
@@ -61,6 +68,8 @@ export async function POST(request) {
           return Response.json({ erro: "O Google recusou a chave da API. Confira a chave em Configurações.", detalhe: ultimo.detalhe }, { status: 502 });
         }
         if (status === 429) break; // cota deste modelo acabou: tenta o próximo
+        // Se o modelo recusar o campo de idioma (400), tenta de novo sem ele
+        if (status === 400 && comIdioma) { comIdioma = false; t--; continue; }
         const temporario = status === 503 || status === 500 || status === 0;
         if (!temporario) break;
         if (t === 1) await esperar(1000);
