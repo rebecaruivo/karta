@@ -8,6 +8,7 @@ import { responder, montarFila, RESPOSTAS } from "@/lib/repeticao";
 import { IDIOMAS } from "@/lib/idiomas";
 import { chaveAudio } from "@/lib/audios";
 import BotaoAudio from "@/components/BotaoAudio";
+import { leituraRepete } from "@/lib/leitura";
 
 // Em japonês escrito só em kana (ex.: りんご), a leitura "りんご (ringo)" repetiria
 // a palavra. Nesses casos, mostra só a parte que acrescenta: "(ringo)".
@@ -123,7 +124,10 @@ export default function Estudar() {
             <p className="mu classe">{carta.classe}</p>
             <div className="exemplo">
               <p className="z" style={{ fontSize: 20, margin: 0 }}>{carta.exemplo}</p>
-              {cfg.escritaPropria && <p className="mu" style={{ margin: "4px 0 0" }}>{carta.exemploLeitura}</p>}
+              {/* Frase toda em kana: a leitura repetiria a frase, então não aparece */}
+              {cfg.escritaPropria && !leituraRepete(carta.exemplo, carta.exemploLeitura) && (
+                <p className="mu" style={{ margin: "4px 0 0" }}>{carta.exemploLeitura}</p>
+              )}
               <p className="mu" style={{ margin: "4px 0 0" }}>{carta.exemploTraducao}</p>
               <div style={{ marginTop: 10 }} onClick={(e) => e.stopPropagation()}>
                 <BotaoAudio chave={chaveAudio(carta.id, "exemplo")} texto={carta.exemplo} codigoVoz={cfg.codigoVoz} rotulo="Ouvir frase" />
