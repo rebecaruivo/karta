@@ -9,9 +9,10 @@ import { paraRevisar } from "@/lib/repeticao";
 import { apagarAudios, chaveAudio } from "@/lib/audios";
 import { gerarAudiosDoBaralho, audiosFaltando } from "@/lib/gerarAudios";
 import BotaoAudio from "@/components/BotaoAudio";
+import { exportarApkg } from "@/lib/exportarApkg";
 
 const ROTULO_STATUS = { nova: "Nova", aprendendo: "Em aprendizado", dominada: "Dominada" };
-const ROTULO_AUDIO = { gerando: "Gerando áudio…", pronto: "Áudio pronto", falhou: "Áudio falhou" };
+const ROTULO_AUDIO = { gerando: "Gerando áudio…", palavra: "Palavra pronta", pronto: "Áudio pronto", falhou: "Áudio falhou" };
 
 export default function Baralho() {
   const { id } = useParams();
@@ -21,6 +22,8 @@ export default function Baralho() {
   const [gerando, setGerando] = useState(false);
   const [estadoCarta, setEstadoCarta] = useState({});
   const [aviso, setAviso] = useState(null);
+  const [exportando, setExportando] = useState(false);
+  const [exportado, setExportado] = useState(null);
 
   useEffect(() => setBaralho(obterBaralho(id)), [id]);
 
@@ -46,6 +49,19 @@ export default function Baralho() {
     else if (r.falhas) setAviso(`${r.falhas} carta(s) ficaram sem áudio. Clique em "Tentar de novo".`);
   }
 
+  async function exportar() {
+    setExportando(true);
+    setExportado(null);
+    setAviso(null);
+    try {
+      setExportado(await exportarApkg(baralho));
+    } catch (e) {
+      setAviso(`Não foi possível exportar: ${e.message}`);
+    } finally {
+      setExportando(false);
+    }
+  }
+
   async function excluir() {
     if (!window.confirm("Excluir este baralho? Não dá para desfazer.")) return;
     await apagarAudios(baralho.cartas.flatMap((c) => [chaveAudio(c.id, "palavra"), chaveAudio(c.id, "exemplo")])).catch(() => {});
@@ -63,7 +79,9 @@ export default function Baralho() {
         </div>
         <div className="acoes">
           <Link href={`/baralho/${baralho.id}/estudar`} className="btn">Estudar ({paraHoje})</Link>
-          <button className="bo" disabled title="Chega na próxima fase">Exportar .apkg</button>
+          <button className="bo" onClick={exportar} disabled={exportando || gerando}>
+            {exportando ? "Montando .apkg…" : "Exportar .apkg"}
+          </button>
         </div>
       </div>
 
@@ -75,7 +93,7 @@ export default function Baralho() {
             <strong>{gerando ? "Gerando áudios com o Gemini…" : `${faltam} áudios por gerar`}</strong>
             <p className="mu" style={{ margin: "4px 0 0" }}>
               {gerando
-                ? "Uma carta por vez. Pode sair desta tela: o que já foi gerado fica salvo."
+                ? "Primeiro a palavra de cada carta, depois as frases. O que já foi gerado fica salvo."
                 : "Pronúncia da palavra e da frase de exemplo. Sem áudio, as cartas usam a voz do navegador."}
             </p>
           </div>
@@ -85,6 +103,14 @@ export default function Baralho() {
         </div>
       )}
       {aviso && <div className="erro" style={{ marginBottom: 20 }}>{aviso}</div>}
+      {exportado && (
+        <div className="aviso" style={{ marginBottom: 20 }}>
+          <strong>Baixado para o Anki:</strong> {exportado.notas} palavras viraram {exportado.cartoes} cartões
+          (leitura {exportado.porTipo[0]}, audição {exportado.porTipo[1]}, produção {exportado.porTipo[2]}), com {exportado.audios} áudios.
+          {exportado.porTipo[1] < exportado.notas && " Cartas sem áudio ficaram sem o cartão de audição: gere os áudios antes para tê-lo."}
+          <br /><span className="mu">No Anki: Arquivo → Importar → escolha o arquivo baixado. Ele aparece em {exportado.nomeBaralho}.</span>
+        </div>
+      )}
 
       <div className="chips" style={{ marginBottom: 12 }}>
         <button className={`ch ${filtro === "todas" ? "on" : ""}`} onClick={() => setFiltro("todas")}>Todas</button>
