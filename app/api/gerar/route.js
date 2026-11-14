@@ -5,6 +5,10 @@
 import { GoogleGenAI } from "@google/genai";
 import { INSTRUCAO_SISTEMA, montarPedido, SCHEMA_BARALHO } from "@/lib/prompt";
 import { validarPedido, limparCartas } from "@/lib/validar";
+import { escolherChave, respostaSemChave } from "@/lib/chaveServidor";
+
+// Tempo máximo da função no Vercel (segundos): a geração com novas tentativas pode passar de 10 s
+export const maxDuration = 60;
 
 // Modelo principal e modelo reserva. Se o principal estiver sobrecarregado
 // ou indisponível, o app tenta o reserva antes de desistir.
@@ -56,14 +60,13 @@ async function gerarCom(ai, modelo, pedido) {
 
 export async function POST(request) {
   // 1) Confere a configuração e o pedido
-  if (!process.env.GEMINI_API_KEY) {
-    return Response.json({ erro: "Falta a GEMINI_API_KEY no arquivo .env.local." }, { status: 500 });
-  }
+  const { chave } = escolherChave(request);
+  if (!chave) return respostaSemChave();
   const body = await request.json().catch(() => null);
   const erroPedido = validarPedido(body);
   if (erroPedido) return Response.json({ erro: erroPedido }, { status: 400 });
 
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  const ai = new GoogleGenAI({ apiKey: chave });
   const pedido = montarPedido(body);
 
   // 2) Tenta cada modelo; em erro temporário, espera e repete (1s, 2s, 4s)
@@ -80,7 +83,7 @@ export async function POST(request) {
 
         if (ultimo.status === 401 || ultimo.status === 403) {
           return Response.json(
-            { erro: "O Google recusou a chave da API. Rode o diagnóstico: npm run diagnostico", detalhe: ultimo.detalhe },
+            { erro: "O Google recusou a chave da API. Confira a chave em Configurações.", detalhe: ultimo.detalhe },
             { status: 502 }
           );
         }

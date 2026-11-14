@@ -4,6 +4,9 @@
 
 import { GoogleGenAI } from "@google/genai";
 import { pcmParaWav, removerCertificadoC2PA } from "@/lib/wav";
+import { escolherChave, respostaSemChave } from "@/lib/chaveServidor";
+
+export const maxDuration = 60;
 
 const MODELOS = [
   process.env.GEMINI_TTS_MODEL || "gemini-3.8-flash-tts",
@@ -17,15 +20,14 @@ const LIMITE_TEXTO = 200; // caracteres: evita uso abusivo da rota
 const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export async function POST(request) {
-  if (!process.env.GEMINI_API_KEY) {
-    return Response.json({ erro: "Falta a GEMINI_API_KEY no arquivo .env.local." }, { status: 500 });
-  }
+  const { chave } = escolherChave(request);
+  if (!chave) return respostaSemChave();
   const { texto } = (await request.json().catch(() => ({}))) || {};
   if (typeof texto !== "string" || !texto.trim() || texto.length > LIMITE_TEXTO) {
     return Response.json({ erro: `Texto inválido (1 a ${LIMITE_TEXTO} caracteres).` }, { status: 400 });
   }
 
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  const ai = new GoogleGenAI({ apiKey: chave });
   let ultimo = null;
 
   for (const modelo of MODELOS) {
@@ -56,7 +58,7 @@ export async function POST(request) {
         console.error(`[voz] ${modelo} tentativa ${t} falhou (status ${status}): ${ultimo.detalhe}`);
 
         if (status === 401 || status === 403) {
-          return Response.json({ erro: "O Google recusou a chave da API.", detalhe: ultimo.detalhe }, { status: 502 });
+          return Response.json({ erro: "O Google recusou a chave da API. Confira a chave em Configurações.", detalhe: ultimo.detalhe }, { status: 502 });
         }
         if (status === 429) break; // cota deste modelo acabou: tenta o próximo
         const temporario = status === 503 || status === 500 || status === 0;

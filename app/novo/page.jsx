@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { IDIOMAS, LIMITE_CARTAS } from "@/lib/idiomas";
 import { salvarBaralho } from "@/lib/armazenamento";
+import { cabecalhosComChave } from "@/lib/chave";
+import Link from "next/link";
 
 const SUGESTOES = ["Comida", "Viagem", "Trabalho", "Cumprimentos", "Casa", "Saúde"];
 
@@ -16,6 +18,7 @@ export default function NovoBaralho() {
   const [gerando, setGerando] = useState(false);
   const [segundos, setSegundos] = useState(0);
   const [erro, setErro] = useState(null);
+  const [semChave, setSemChave] = useState(false);
 
   // Cronômetro honesto: mostra quanto tempo passou, sem barra de progresso falsa
   useEffect(() => {
@@ -37,10 +40,11 @@ export default function NovoBaralho() {
     try {
       const resp = await fetch("/api/gerar", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: cabecalhosComChave(),
         body: JSON.stringify({ idioma, nivel, tema: tema.trim(), quantidade: Number(quantidade) }),
       });
       const dados = await resp.json();
+      setSemChave(dados.codigo === "sem-chave");
       if (!resp.ok) throw new Error([dados.erro || "Erro desconhecido.", dados.detalhe].filter(Boolean).join("\n\nDetalhe técnico: "));
 
       const baralho = {
@@ -121,7 +125,12 @@ export default function NovoBaralho() {
             onChange={(e) => setQuantidade(e.target.value)} style={{ width: "100%" }} />
         </div>
 
-        {erro && <div className="erro" style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>{erro}</div>}
+        {erro && (
+          <div className="erro" style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
+            {erro}
+            {semChave && <div style={{ marginTop: 10 }}><Link href="/configuracoes" className="btn">Colar minha chave</Link></div>}
+          </div>
+        )}
 
         <div><button className="btn" type="submit">Gerar baralho</button></div>
       </form>
