@@ -20,7 +20,7 @@ O ponto de partida foi o [Agente_Flashcards_Mandarim](https://github.com/Sanches
 | Voz com edge-tts (vozes neurais da Microsoft, acessadas por biblioteca da comunidade) | Áudio separado para a palavra e para a frase | Gemini TTS pela API oficial, modelos reserva e voz do navegador como último recurso |
 | `.apkg` com genanki e 5 tipos de carta | A exportação para o Anki como objetivo | Ainda não feito no Karta; será escrito do zero |
 | Trava de 10 palavras e 20 caracteres por lote (controle de custo) | — | Limites tratados também na resposta: cota, sobrecarga e tempo limite |
-| Script de terminal, só mandarim | — | App web com 5 idiomas, biblioteca, modo estudo e repetição espaçada |
+| Script de terminal. Na branch principal, só mandarim; numa [branch de junho/2026](https://github.com/SanchesPinto/Agente_Flashcards_Mandarim/tree/feature/english-and-french-support), inglês e francês, com um arquivo de configuração por idioma (voz, nome do baralho, templates) | A mesma abordagem de configuração por idioma, que o Karta também adotou em `lib/idiomas.js` | App web com 5 idiomas, biblioteca, modo estudo e repetição espaçada |
 
 O código dele continua neste repositório, em [`v1-python/`](../v1-python), com o histórico de commits original. **Nenhuma linha de código foi reaproveitada:** o projeto do Gabriel é Python e o Karta é JavaScript, escrito do zero. Os mockups do Karta foram desenhados a partir do pipeline dele, por isso o escopo é o mesmo.
 
