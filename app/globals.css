@@ -1,0 +1,84 @@
+/* Tokens copiados dos mockups (pasta KartaFront) */
+:root {
+  --tinta: #1D1B2E;
+  --suave: #4A4760;
+  --fundo-carta: #F1F6FF;
+  --linha: #E4E4EA;
+  --azul: #3B6FE0;
+}
+* { box-sizing: border-box; }
+body { margin: 0; font-family: 'Figtree', sans-serif; color: var(--tinta); background: #fff; }
+a { color: inherit; text-decoration: none; }
+.d { font-family: 'Outfit', sans-serif; }
+.z { font-family: 'Noto Serif SC', serif; }
+.mu { color: var(--suave); font-size: 14px; }
+
+.topo { display: flex; align-items: center; justify-content: space-between; padding: 20px 32px; border-bottom: 1px solid var(--linha); }
+.marca { font-size: 24px; font-weight: 700; }
+.topo nav a { font-weight: 600; }
+.conteudo { max-width: 1040px; margin: 0 auto; padding: 32px 24px 64px; }
+
+h1 { font-family: 'Outfit', sans-serif; font-size: 36px; margin: 0 0 4px; }
+.cabecalho { display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-end; justify-content: space-between; margin-bottom: 28px; }
+
+.btn { background: var(--tinta); color: #fff; font: 600 15px 'Figtree', sans-serif; padding: 13px 22px; border: 0; border-radius: 999px; cursor: pointer; display: inline-block; }
+.btn:disabled { opacity: .5; cursor: wait; }
+.bo { background: transparent; color: var(--tinta); font: 600 15px 'Figtree', sans-serif; padding: 12px 22px; border: 1.5px solid var(--tinta); border-radius: 999px; cursor: pointer; display: inline-block; }
+.ch { font: 600 14px 'Figtree', sans-serif; padding: 8px 16px; border: 1.5px solid var(--tinta); border-radius: 999px; background: transparent; color: var(--tinta); cursor: pointer; }
+.ch.on { background: var(--tinta); color: #fff; }
+.tg { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; border: 1.5px solid var(--tinta); white-space: nowrap; }
+
+/* Biblioteca */
+.grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+.t { border-radius: 24px; padding: 20px; background: var(--fundo-carta); display: flex; flex-direction: column; gap: 6px; min-height: 170px; transition: transform .15s; }
+.t:hover { transform: translateY(-2px); }
+.t .sig { font-size: 30px; }
+.t .nome { font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 700; margin-top: auto; }
+.bar { height: 6px; background: rgba(29,27,46,.15); border-radius: 3px; margin-top: 12px; }
+.bar div { height: 6px; border-radius: 3px; background: var(--tinta); }
+.vazio { border: 1.5px dashed var(--tinta); border-radius: 24px; padding: 48px; text-align: center; }
+
+/* Formulário */
+.form { display: grid; gap: 22px; max-width: 560px; }
+.lb { font-weight: 600; font-size: 15px; display: block; margin-bottom: 8px; }
+.fi { width: 100%; font: 16px 'Figtree', sans-serif; padding: 13px 18px; border: 1.5px solid var(--tinta); border-radius: 16px; background: #fff; color: var(--tinta); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.erro { border: 1.5px dashed var(--tinta); border-radius: 16px; padding: 14px 18px; font-weight: 600; }
+.aviso { background: var(--fundo-carta); border-radius: 16px; padding: 14px 18px; }
+
+/* Lista de cartas */
+.lr { display: grid; grid-template-columns: 120px 1fr 1.2fr 120px; gap: 8px 16px; align-items: center; padding: 14px 8px; border-top: 1px solid var(--linha); }
+.lr.lh { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--suave); font-weight: 600; border-top: 0; }
+.lr .pal { font-size: 22px; }
+@media (max-width: 640px) {
+  .lr { grid-template-columns: 1fr auto; }
+  .lr.lh { display: none; }
+}
+.acoes { display: flex; flex-wrap: wrap; gap: 10px; }
+
+/* Carregamento */
+.etapas { list-style: none; padding: 0; display: grid; gap: 10px; }
+.etapas li { padding: 12px 18px; border-radius: 16px; background: var(--fundo-carta); }
+.etapas li.feito { background: var(--tinta); color: #fff; }
+
+/* Estudo (mockup "Estudo — resposta") */
+.estudo { max-width: 900px; margin: 0 auto; }
+.estudo-topo { display: flex; align-items: center; gap: 16px; margin-bottom: 32px; }
+.flash { max-width: 560px; margin: 0 auto 32px; min-height: 380px; background: var(--fundo-carta); border: 1px solid #C9DAF8; border-radius: 24px; padding: 32px; display: flex; flex-direction: column; box-shadow: 0 12px 0 -4px #DCE8FD, 0 24px 0 -10px #C2D8FC; }
+.frente { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+.grande { font-size: 72px; }
+.rotulo { font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--suave); }
+.verso-topo { display: flex; justify-content: space-between; align-items: center; }
+.leitura { font-size: 44px; font-weight: 700; margin: 24px 0 4px; }
+.traducao { font-size: 24px; margin: 0; display: flex; gap: 12px; align-items: center; }
+.exemplo { margin-top: auto; padding-top: 20px; border-top: 1px solid #C9D3E6; }
+
+/* Biblioteca: tom pelo progresso (mockup "Tom pelo progresso") */
+.tom-0 { background: #F3F7FF; }
+.tom-1 { background: #DCE8FD; }
+.tom-2 { background: #C2D8FC; }
+.legenda { display: flex; align-items: center; gap: 8px; margin-bottom: 28px; }
+.legenda i { width: 20px; height: 20px; border-radius: 6px; display: inline-block; border: 1px solid #E4E4EA; }
+.grupo { margin-bottom: 36px; }
+.grupo h2 { font-size: 20px; margin: 0 0 14px; }
+.grupo h2 .mu { font-weight: 400; }

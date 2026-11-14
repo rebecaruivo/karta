@@ -1,0 +1,9 @@
+node_modules/
+.next/
+out/
+# Segredos: a chave da API nunca vai para o GitHub
+.env
+.env.local
+.env*.local
+.vercel
+*.log
