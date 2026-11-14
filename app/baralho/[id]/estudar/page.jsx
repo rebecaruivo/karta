@@ -9,6 +9,15 @@ import { IDIOMAS } from "@/lib/idiomas";
 import { chaveAudio } from "@/lib/audios";
 import BotaoAudio from "@/components/BotaoAudio";
 
+// Em japonês escrito só em kana (ex.: りんご), a leitura "りんご (ringo)" repetiria
+// a palavra. Nesses casos, mostra só a parte que acrescenta: "(ringo)".
+function leituraSemRepetir(carta) {
+  const leitura = carta.leitura || "";
+  return leitura.startsWith(carta.palavra) && leitura.length > carta.palavra.length
+    ? leitura.slice(carta.palavra.length).trim()
+    : leitura;
+}
+
 export default function Estudar() {
   const { id } = useParams();
   const [baralho, setBaralho] = useState(undefined);
@@ -93,16 +102,15 @@ export default function Estudar() {
           </div>
         ) : (
           <>
-            <div className="verso-topo">
-              <span className="rotulo">Resposta</span>
-              <span className="z" style={{ fontSize: 22 }}>{carta.palavra}</span>
-            </div>
-            <p className="d leitura">{carta.leitura}</p>
+            {/* Mesmo padrão para todos os idiomas: a palavra como na frente, e a pronúncia logo abaixo */}
+            <span className="rotulo" style={{ textAlign: "center" }}>Resposta</span>
+            <p className="z palavra-verso">{carta.palavra}</p>
+            <p className="d leitura">{leituraSemRepetir(carta)}</p>
             {/* Toca a palavra sozinho ao virar a carta (virar já é um clique, então o navegador permite) */}
-            <div style={{ margin: "4px 0 12px" }}>
+            <div style={{ margin: "4px 0 16px", textAlign: "center" }}>
               <BotaoAudio key={carta.id} chave={chaveAudio(carta.id, "palavra")} texto={carta.palavra} codigoVoz={cfg.codigoVoz} autoTocar />
             </div>
-            <p className="traducao">{carta.traducao} <span className="tg">{carta.classe}</span></p>
+            <p className="traducao" style={{ justifyContent: "center" }}>{carta.traducao} <span className="tg">{carta.classe}</span></p>
             <div className="exemplo">
               <p className="z" style={{ fontSize: 20, margin: 0 }}>{carta.exemplo}</p>
               <p className="mu" style={{ margin: "4px 0 0" }}>{carta.exemploLeitura}</p>

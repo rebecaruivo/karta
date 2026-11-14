@@ -68,8 +68,8 @@ h1 { font-family: 'Outfit', sans-serif; font-size: 36px; margin: 0 0 4px; }
 .frente { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
 .grande { font-size: 72px; }
 .rotulo { font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--suave); }
-.verso-topo { display: flex; justify-content: space-between; align-items: center; }
-.leitura { font-size: 44px; font-weight: 700; margin: 24px 0 4px; }
+.palavra-verso { font-size: 64px; margin: 8px 0 0; text-align: center; line-height: 1.2; }
+.leitura { font-size: 26px; font-weight: 700; margin: 6px 0 4px; text-align: center; }
 .traducao { font-size: 24px; margin: 0; display: flex; gap: 12px; align-items: center; }
 .exemplo { margin-top: auto; padding-top: 20px; border-top: 1px solid #C9D3E6; }
 
