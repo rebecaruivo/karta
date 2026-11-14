@@ -125,6 +125,11 @@ O Karta foi publicado no Vercel. No primeiro teste com um baralho de japonês, a
 
 **2. Verso das cartas inconsistente.** O verso mostrava a palavra pequena no canto e a pronúncia grande no centro; no japonês, o kanji ia para o canto e o hiragana para o centro. Agora todos os idiomas seguem o mesmo padrão da frente: a palavra grande no centro, a pronúncia logo abaixo. Em palavras escritas só em kana, a leitura não repete a palavra (mostra só o romaji).
 
+**Ajustes de interface pedidos depois do uso:**
+- **Verso por tipo de escrita.** Mandarim e japonês mostram a palavra e a leitura. Inglês, francês e espanhol mostram só o que acrescenta: a palavra já está na frente e o áudio dá a pronúncia. A regra fica em `escritaPropria`, no arquivo de idiomas.
+- **Carta que vira nos dois sentidos** (clique ou espaço), com giro 3D. As duas faces ficam sempre montadas, uma de costas para a outra. Três cuidados: a carta seguinte entra já de frente (senão o giro de volta mostraria a resposta dela por um instante); o áudio só toca ao virar para o verso; quem ativa "reduzir movimento" no sistema vê a troca sem animação.
+- **Menos "pílulas".** A classe gramatical virou texto pequeno e cinza abaixo da tradução, no app e nos cartões do Anki.
+
 ---
 
 ## Próximas etapas
