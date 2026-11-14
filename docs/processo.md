@@ -10,8 +10,24 @@ Como o Karta saiu de quatro telas estáticas para um app com IA funcionando. Cad
 
 ---
 
+## Origem: o projeto do Gabriel
+O ponto de partida foi o [Agente_Flashcards_Mandarim](https://github.com/SanchesPinto/Agente_Flashcards_Mandarim), de **Gabriel Pinto** (fev–mar/2026): um pipeline em Python que recebe uma lista de palavras e gera um baralho do Anki.
+
+| Projeto do Gabriel | O que o Karta herdou | O que o Karta fez diferente |
+|---|---|---|
+| GPT-4o-mini com saída estruturada (Pydantic) | Os 7 campos da carta: palavra, pinyin, tradução, classe, frase, pinyin da frase, tradução da frase | Gemini com schema JSON; regras de pronúncia por idioma; validação depois do modelo |
+| Imagens do Pexels | O espaço para imagem na tela "Gerando" | Imagem ficou para depois |
+| Voz com edge-tts (vozes neurais da Microsoft, acessadas por biblioteca da comunidade) | Áudio separado para a palavra e para a frase | Gemini TTS pela API oficial, modelos reserva e voz do navegador como último recurso |
+| `.apkg` com genanki e 5 tipos de carta | A exportação para o Anki como objetivo | Ainda não feito no Karta; será escrito do zero |
+| Trava de 10 palavras e 20 caracteres por lote (controle de custo) | — | Limites tratados também na resposta: cota, sobrecarga e tempo limite |
+| Script de terminal, só mandarim | — | App web com 5 idiomas, biblioteca, modo estudo e repetição espaçada |
+
+O código dele continua neste repositório, em [`v1-python/`](../v1-python), com o histórico de commits original. **Nenhuma linha de código foi reaproveitada:** o projeto do Gabriel é Python e o Karta é JavaScript, escrito do zero. Os mockups do Karta foram desenhados a partir do pipeline dele, por isso o escopo é o mesmo.
+
+---
+
 ## Dia 0: os mockups
-Eu tinha quatro telas desenhadas (Biblioteca, Gerando, Baralho, Estudo) e nenhuma lógica: os dados estavam escritos à mão no HTML. Antes de publicar, avaliei o material contra o que eu queria mostrar e concluí que mockup não prova que eu sei construir produto com IA. Decidi construir o app de verdade, usando os mockups como especificação visual ([docs/design](design)).
+Eu tinha quatro telas desenhadas a partir do pipeline do Gabriel (Biblioteca, Gerando, Baralho, Estudo) e nenhuma lógica: os dados estavam escritos à mão no HTML. Antes de publicar, avaliei o material contra o que eu queria mostrar e concluí que mockup não prova que eu sei construir produto com IA. Decidi construir o app de verdade, usando os mockups como especificação visual ([docs/design](design)).
 
 ## Dia 1 (08/11): escopo e arquitetura
 | Pergunta | Decisão | Por quê |

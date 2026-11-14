@@ -8,6 +8,11 @@ Baralhos de flashcards de idiomas gerados por IA. Você escolhe o idioma, o nív
 |---|---|
 | ![Baralho de mandarim gerado](docs/screenshots/baralho.png) | ![Carta no modo estudo](docs/screenshots/estudo-resposta.png) |
 
+## Origem
+O Karta começou como uma nova interface para o [Agente_Flashcards_Mandarim](https://github.com/SanchesPinto/Agente_Flashcards_Mandarim), pipeline em Python de **Gabriel Pinto** (OpenAI, Pexels, edge-tts e genanki). O escopo vem desse projeto: cartas com pinyin e frase de exemplo, áudio separado para palavra e frase e exportação para o Anki.
+
+O código original do Gabriel está preservado em [`v1-python/`](v1-python), com o histórico completo dos commits dele neste repositório. O Karta reescreveu a implementação do zero como app web, sem reaproveitar código: trocou os provedores pelo Gemini e acrescentou vários idiomas, modo estudo com repetição espaçada, modelos reserva e diagnóstico. A comparação completa está no [diário](docs/processo.md#origem-o-projeto-do-gabriel).
+
 ## Por que existe
 Montar um baralho bom de vocabulário dá trabalho: escolher as palavras do nível, conferir a pronúncia e achar uma frase de exemplo que não use palavras mais difíceis que a própria carta. O Karta faz essa parte em segundos e deixa a pessoa só estudar.
 
@@ -79,6 +84,7 @@ lib/
   repeticao.js                 Repetição espaçada
   armazenamento.js             Leitura e escrita no navegador
 scripts/diagnostico.mjs        Teste de chave e de modelos
+v1-python/                     Projeto original do Gabriel Pinto (Python), preservado
 docs/
   processo.md                  Diário de construção
   design/                      Mockups originais
@@ -86,4 +92,4 @@ docs/
 ```
 
 ## Como foi feito
-Construído com IA de ponta a ponta: mockups gerados com uma ferramenta de design com IA; código escrito com o Claude como agente, a partir das minhas decisões de produto e dos meus testes; Gemini como motor do produto. Detalhes no [diário](docs/processo.md).
+Construído com IA de ponta a ponta, a partir do projeto de Gabriel Pinto (veja [Origem](#origem)): mockups gerados com uma ferramenta de design com IA; código escrito com o Claude como agente, a partir das minhas decisões de produto e dos meus testes; Gemini como motor do produto. Detalhes no [diário](docs/processo.md).
