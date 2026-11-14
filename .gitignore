@@ -7,3 +7,11 @@ out/
 .env*.local
 .vercel
 *.log
+
+# Amostras de áudio geradas pelo diagnóstico
+amostras-voz/
+
+# Python (pasta v1-python)
+__pycache__/
+v1-python/media_temp/
+v1-python/audios_temp/

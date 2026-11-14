@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "diagnostico": "node --env-file=.env.local scripts/diagnostico.mjs"
+    "diagnostico": "node --env-file=.env.local scripts/diagnostico.mjs",
+    "diagnostico:voz": "node --env-file=.env.local scripts/diagnostico-voz.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.0.0",
