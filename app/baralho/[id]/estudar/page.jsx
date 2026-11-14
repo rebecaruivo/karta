@@ -37,11 +37,11 @@ export default function Estudar() {
     }
   }, [id]);
 
-  // Atalhos de teclado: espaço vira a carta; 1, 2, 3 respondem
+  // Atalhos de teclado: espaço vira a carta (para os dois lados); 1, 2, 3 respondem
   useEffect(() => {
     function tecla(e) {
       if (!fila.length) return;
-      if (!virada && e.code === "Space") { e.preventDefault(); setVirada(true); }
+      if (e.code === "Space") { e.preventDefault(); setVirada((v) => !v); }
       if (virada && ["1", "2", "3"].includes(e.key)) avaliar(["nao", "acho", "decorei"][Number(e.key) - 1]);
     }
     window.addEventListener("keydown", tecla);
@@ -94,36 +94,46 @@ export default function Estudar() {
         <span className="mu">{feitas} / {total}</span>
       </div>
 
-      <div className="flash">
-        {!virada ? (
-          <div className="frente">
+      {/* A carta que vira: as duas faces ficam sempre montadas, uma de costas para a outra.
+          key={carta.id}: carta nova entra já de frente, sem girar de volta mostrando a resposta dela. */}
+      <div key={carta.id} className={`flash-cena ${virada ? "virada" : ""}`}>
+        <div className="flash-giro" onClick={() => setVirada((v) => !v)} role="button" tabIndex={0}
+          aria-label={virada ? "Voltar para a pergunta" : "Ver a resposta"}>
+          <div className="flash face frente" aria-hidden={virada}>
             <span className="rotulo">Pergunta</span>
             <span className="z grande">{carta.palavra}</span>
+            <span className="mu dica">Clique para virar</span>
           </div>
-        ) : (
-          <>
-            {/* Mesmo padrão para todos os idiomas: a palavra como na frente, e a pronúncia logo abaixo */}
+
+          <div className="flash face verso" aria-hidden={!virada}>
             <span className="rotulo" style={{ textAlign: "center" }}>Resposta</span>
-            <p className="z palavra-verso">{carta.palavra}</p>
-            <p className="d leitura">{leituraSemRepetir(carta)}</p>
-            {/* Toca a palavra sozinho ao virar a carta (virar já é um clique, então o navegador permite) */}
-            <div style={{ margin: "4px 0 16px", textAlign: "center" }}>
-              <BotaoAudio key={carta.id} chave={chaveAudio(carta.id, "palavra")} texto={carta.palavra} codigoVoz={cfg.codigoVoz} autoTocar />
+            {/* Escrita própria (mandarim, japonês): repete a palavra e mostra a leitura.
+                Alfabeto latino: a palavra já está na frente e o áudio dá a pronúncia. */}
+            {cfg.escritaPropria && (
+              <>
+                <p className="z palavra-verso">{carta.palavra}</p>
+                <p className="d leitura">{leituraSemRepetir(carta)}</p>
+              </>
+            )}
+            {/* O áudio só toca ao virar para o verso (stopPropagation: clicar no botão não vira a carta) */}
+            <div style={{ margin: "8px 0 14px", textAlign: "center" }} onClick={(e) => e.stopPropagation()}>
+              <BotaoAudio chave={chaveAudio(carta.id, "palavra")} texto={carta.palavra} codigoVoz={cfg.codigoVoz} autoTocar={virada} />
             </div>
-            <p className="traducao" style={{ justifyContent: "center" }}>{carta.traducao} <span className="tg">{carta.classe}</span></p>
+            <p className="traducao-verso">{carta.traducao}</p>
+            <p className="mu classe">{carta.classe}</p>
             <div className="exemplo">
               <p className="z" style={{ fontSize: 20, margin: 0 }}>{carta.exemplo}</p>
-              <p className="mu" style={{ margin: "4px 0 0" }}>{carta.exemploLeitura}</p>
+              {cfg.escritaPropria && <p className="mu" style={{ margin: "4px 0 0" }}>{carta.exemploLeitura}</p>}
               <p className="mu" style={{ margin: "4px 0 0" }}>{carta.exemploTraducao}</p>
-              <div style={{ marginTop: 10 }}>
-                <BotaoAudio key={carta.id + "-ex"} chave={chaveAudio(carta.id, "exemplo")} texto={carta.exemplo} codigoVoz={cfg.codigoVoz} rotulo="Ouvir frase" />
+              <div style={{ marginTop: 10 }} onClick={(e) => e.stopPropagation()}>
+                <BotaoAudio chave={chaveAudio(carta.id, "exemplo")} texto={carta.exemplo} codigoVoz={cfg.codigoVoz} rotulo="Ouvir frase" />
               </div>
             </div>
-          </>
-        )}
+          </div>
+        </div>
       </div>
 
-      <div style={{ textAlign: "center" }}>
+      <div style={{ textAlign: "center", minHeight: 110 }}>
         {!virada ? (
           <button className="btn" onClick={() => setVirada(true)}>Mostrar resposta <span className="mu" style={{ color: "#bbb" }}>(espaço)</span></button>
         ) : (
@@ -134,7 +144,7 @@ export default function Estudar() {
               <button className="bo" style={{ background: "#DCE8FD" }} onClick={() => avaliar("acho")}>{RESPOSTAS.acho}</button>
               <button className="btn" onClick={() => avaliar("decorei")}>{RESPOSTAS.decorei}</button>
             </div>
-            <p className="mu" style={{ fontSize: 12 }}>Atalhos: 1, 2, 3</p>
+            <p className="mu" style={{ fontSize: 12 }}>Atalhos: 1, 2, 3 · espaço vira a carta</p>
           </>
         )}
       </div>

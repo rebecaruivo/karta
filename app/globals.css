@@ -64,13 +64,24 @@ h1 { font-family: 'Outfit', sans-serif; font-size: 36px; margin: 0 0 4px; }
 /* Estudo (mockup "Estudo — resposta") */
 .estudo { max-width: 900px; margin: 0 auto; }
 .estudo-topo { display: flex; align-items: center; gap: 16px; margin-bottom: 32px; }
-.flash { max-width: 560px; margin: 0 auto 32px; min-height: 380px; background: var(--fundo-carta); border: 1px solid #C9DAF8; border-radius: 24px; padding: 32px; display: flex; flex-direction: column; box-shadow: 0 12px 0 -4px #DCE8FD, 0 24px 0 -10px #C2D8FC; }
-.frente { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+/* Carta que vira (efeito 3D). As duas faces ocupam a mesma célula da grade,
+   então a carta fica com a altura da face mais alta, sem posição absoluta. */
+.flash-cena { max-width: 560px; margin: 0 auto 32px; perspective: 1400px; }
+.flash-giro { display: grid; cursor: pointer; transition: transform .6s cubic-bezier(.2,.7,.2,1); transform-style: preserve-3d; }
+.flash-cena.virada .flash-giro { transform: rotateY(180deg); }
+.flash-giro:focus-visible { outline: 3px solid var(--azul); outline-offset: 6px; border-radius: 24px; }
+.face { grid-area: 1 / 1; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.verso { transform: rotateY(180deg); }
+.flash { min-height: 380px; background: var(--fundo-carta); border: 1px solid #C9DAF8; border-radius: 24px; padding: 32px; display: flex; flex-direction: column; box-shadow: 0 12px 0 -4px #DCE8FD, 0 24px 0 -10px #C2D8FC; }
+.frente { align-items: center; justify-content: center; gap: 16px; }
+.dica { font-size: 12px; }
+@media (prefers-reduced-motion: reduce) { .flash-giro { transition: none; } }
 .grande { font-size: 72px; }
 .rotulo { font-size: 13px; letter-spacing: .1em; text-transform: uppercase; color: var(--suave); }
 .palavra-verso { font-size: 64px; margin: 8px 0 0; text-align: center; line-height: 1.2; }
 .leitura { font-size: 26px; font-weight: 700; margin: 6px 0 4px; text-align: center; }
-.traducao { font-size: 24px; margin: 0; display: flex; gap: 12px; align-items: center; }
+.traducao-verso { font-size: 26px; margin: 0; text-align: center; }
+.classe { margin: 2px 0 20px; text-align: center; font-size: 14px; }
 .exemplo { margin-top: auto; padding-top: 20px; border-top: 1px solid #C9D3E6; }
 
 /* Biblioteca: tom pelo progresso (mockup "Tom pelo progresso") */
