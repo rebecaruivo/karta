@@ -2,7 +2,7 @@
 
 Baralhos de flashcards de idiomas gerados por IA. Você escolhe o idioma, o nível e o tema. O Gemini monta as cartas com pronúncia, tradução e uma frase de exemplo no nível certo, e o app agenda as revisões por repetição espaçada.
 
-> **Status:** em desenvolvimento. A geração com IA, a biblioteca, o baralho e o modo estudo estão funcionando. Próximas etapas: áudio e exportação para o Anki. Acompanhe pelo [diário de construção](docs/processo.md).
+> **Status:** em desenvolvimento. A geração com IA, a biblioteca, o baralho, o modo estudo e o áudio estão funcionando. Próxima etapa: exportação para o Anki. Acompanhe pelo [diário de construção](docs/processo.md).
 
 | Baralho gerado pelo Gemini | Modo estudo |
 |---|---|
@@ -23,7 +23,7 @@ Montar um baralho bom de vocabulário dá trabalho: escolher as palavras do nív
 | Saída estruturada e validação | Schema JSON imposto ao modelo + [`lib/validar.js`](lib/validar.js) |
 | Orquestração de modelos com resiliência | [`app/api/gerar/route.js`](app/api/gerar/route.js): novas tentativas, modelos reserva, tempo limite |
 | API sem backend próprio | Rota `/api` que vira função serverless e guarda a chave fora do navegador |
-| Diagnóstico de problemas reais | [`scripts/diagnostico.mjs`](scripts/diagnostico.mjs) e os 6 problemas do [diário](docs/processo.md#dia-2-1411-as-telas-e-o-primeiro-teste-real) |
+| Diagnóstico de problemas reais | [`scripts/diagnostico.mjs`](scripts/diagnostico.mjs), os 6 problemas do [primeiro teste](docs/processo.md#dia-2-1411-as-telas-e-o-primeiro-teste-real) e o [chiado causado por um certificado C2PA](docs/processo.md#dia-2-à-tarde-1411-áudio) |
 | Do design ao produto | [Mockups](docs/design) que viraram as telas reais |
 
 ## Como funciona

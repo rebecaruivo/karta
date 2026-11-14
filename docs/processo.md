@@ -60,9 +60,27 @@ No primeiro teste com a API, nada funcionou. Seis problemas, em sequência:
 
 **O que aprendi:** num produto que depende de um modelo de terceiros, o modelo é uma peça que muda sem aviso. Ele é aposentado, fica sobrecarregado, demora. Por isso o app precisa de nome de modelo em configuração, erro explicado, plano B e um jeito rápido de diagnosticar.
 
+## Dia 2, à tarde (14/11): áudio
+**Antes de construir, medir.** Escrevi `npm run diagnostico:voz`, que testa cada modelo de voz disponível para a chave pelos dois caminhos da API e salva um `.wav` de amostra. Resultado: três modelos gratuitos funcionam pelo `generateContent`; o `2.5-pro-tts` exige plano pago; o endpoint novo (`Interactions`) exige uma versão mais nova do SDK.
+
+**Arquitetura do áudio:**
+| Decisão | Por quê |
+|---|---|
+| Rota `/api/voz` com modelo principal e reservas | Mesma resiliência da geração de texto. Quando a cota de um modelo acaba, passa para o próximo (cada modelo tem a sua cota) |
+| PCM convertido para WAV no servidor | O Gemini devolve som "cru"; o navegador só toca com o cabeçalho de 44 bytes do WAV |
+| Áudios no IndexedDB, não no localStorage | WAV ocupa ~48 KB por segundo; um baralho de 10 cartas já passa de 1,5 MB e o localStorage aguenta ~5 MB no total |
+| Uma carta por vez, salvando cada áudio | Respeita o limite por minuto da camada gratuita; se o limite chegar, nada se perde |
+| Voz do navegador como último recurso | A carta nunca fica muda |
+
+**O chiado no final.** No teste, todo áudio terminava com um ruído. Medi as amostras: os modelos `2.5` e `3.1` terminavam em silêncio, mas os da família `3.8` tinham ~160 ms de chiado forte depois da fala. Lendo os bytes finais, encontrei texto no meio do som: "Google LLC", "C2PA OCSP Responder" e uma assinatura digital. Era um **certificado de procedência C2PA** (Content Credentials), que o Google anexa para provar que o áudio foi gerado por IA. Como o áudio vem cru, sem envelope de arquivo, o certificado fica colado nas amostras e é tocado como se fosse som.
+
+A correção ([`lib/wav.js`](../lib/wav.js)) procura a marca `C2PA` seguida da caixa JUMBF (`jumb`) e corta o áudio ali: 7.664 bytes removidos nos modelos 3.8, nenhum nos outros. Para os áudios já salvos com chiado, os áudios ganharam um número de versão: quando o processo de geração muda, o app trata os antigos como desatualizados e oferece gerar de novo.
+
+**O que aprendi:** "o modelo devolveu áudio" não quer dizer que tudo o que veio é áudio. Conferir os bytes de verdade mostrou um dado que nenhuma documentação tinha mencionado.
+
 ---
 
 ## Próximas etapas
-- [ ] Áudio de cada carta (Gemini TTS, com a voz do navegador como plano B)
+- [x] Áudio de cada carta (Gemini TTS, com a voz do navegador como plano B)
 - [ ] Exportação `.apkg` para o Anki
 - [ ] Deploy no Vercel
