@@ -2,9 +2,10 @@
 // Uso: npm run testar:v2
 import { lerPalavras } from "../lib/v2/portaEntrada.js";
 import { montarCartas, CATALOGO_PONTES } from "../lib/v2/pontes.js";
-import { montarFilaDoDia } from "../lib/v2/sessao.js";
+import { montarFila } from "../lib/v2/sessao.js";
 import { criarRepositorio } from "../lib/v2/banco.js";
 import { adaptadorMemoria, adaptadorIndexedDB } from "../lib/v2/adaptadores.js";
+import { podeGerarAudio, usaGravacao, usaVozDoNavegador } from "../lib/preferencias.js";
 import { calcularLacuna, fraseComLacuna, validarMandarim, montarPalavraEnriquecida, capitalizarPinyin, alertas } from "../lib/v2/facetas.js";
 
 let falhas = 0;
@@ -68,24 +69,33 @@ const soAtivas = CATALOGO_PONTES.map((p) => ({ ...p, active: p.id === "WORD_TO_M
 conferir(montarCartas([agua], { catalogo: soAtivas }).cartas.length === 1, "ponte desativada não gera carta");
 conferir(montarCartas([agua], { existentes: c1 }).cartas.length === 0, "rodar de novo não duplica (conceito + ponte é único)");
 
-console.log("\n— Fila do dia e cartas irmãs");
+console.log("\n— Áudio opcional no baralho (opção a)");
+const semAudio = montarCartas([agua], { facetasOpcionais: [] });
+conferir(semAudio.cartas.map((c) => c.bridge_template_id).sort().join() === "CLOZE_SENTENCE_TO_WORD,MEANING_TO_SENTENCE,WORD_TO_MEANING", "sem exercícios de áudio: 3 cartas (palavra → significado, significado → frase, lacuna)");
+conferir(semAudio.naoCriadas.length === 0, "as pontes de áudio não contam como \"não criadas\": estão desligadas de propósito");
+conferir(montarCartas([agua], { facetasOpcionais: ["AUDIO"] }).cartas.length === 7, "com áudio: 7 cartas");
+const semFacetaAudio = { ...agua, facets: agua.facets.filter((f) => f.facet_type !== "AUDIO") };
+conferir(montarCartas([semFacetaAudio], { facetasOpcionais: [] }).cartas.length === 3, "o botão \"Ouvir frase\" é auxiliar: a carta de lacuna existe mesmo sem faceta de áudio");
+
+console.log("\n— Modo de áudio (Configurações)");
+conferir(podeGerarAudio("cota_e_navegador") && usaGravacao("cota_e_navegador") && usaVozDoNavegador("cota_e_navegador"), "cota e navegador: gera, toca a gravação e usa a voz do navegador como reserva");
+conferir(podeGerarAudio("cota") && usaGravacao("cota") && !usaVozDoNavegador("cota"), "só a cota: gera e toca a gravação, sem voz do navegador");
+conferir(!podeGerarAudio("navegador") && !usaGravacao("navegador") && usaVozDoNavegador("navegador"), "só o navegador: nunca gera (nunca gasta cota), sempre a voz do aparelho");
+
+console.log("\n— Fila de estudo (tudo disponível, embaralhado, sem limite diário)");
 const agora = new Date("2026-11-15T15:00:00");
 const tres = ["água", "chá", "sol"].map((g) => base(g + "!"));
 const todas = montarCartas(tres, { agora }).cartas;
-const { fila: f1, enterradas: e1 } = montarFilaDoDia(todas, { agora });
-conferir(todas.length === 21 && f1.length === 3 && e1.length === 18, "3 palavras × 7 cartas: só 3 aparecem hoje (uma por palavra); 18 irmãs ficam para outro dia");
-conferir(f1.every((c) => c.bridge_template_id === "WORD_TO_MEANING"), "a primeira carta de cada palavra é a mais fácil (Palavra → Significado)");
-conferir(montarFilaDoDia(todas, { agora, limiteNovas: 2 }).fila.length === 2, "respeita o limite de cartas novas por dia");
-const estudada = todas.map((c, i) => (i === 0 ? { ...c, state: "REVIEW", last_review_at: "2026-11-15T09:00:00", due_at: "2026-11-17T09:00:00" } : c));
-const { fila: f2 } = montarFilaDoDia(estudada, { agora });
-conferir(!f2.some((c) => c.concept_id === todas[0].concept_id), "palavra que já teve carta estudada hoje: nenhuma irmã aparece hoje");
-const revisao = todas.map((c, i) => (i === 3 ? { ...c, state: "REVIEW", last_review_at: "2026-11-10T09:00:00", due_at: "2026-11-14T10:00:00" } : c));
-const { fila: f3 } = montarFilaDoDia(revisao, { agora });
-conferir(f3[0].id === todas[3].id, "revisão atrasada vem antes das cartas novas");
-const errada = todas.map((c, i) => (i === 0 ? { ...c, state: "LEARNING", last_review_at: "2026-11-15T14:50:00", due_at: "2026-11-15T14:59:00" } : c));
-const { fila: f4 } = montarFilaDoDia(errada, { agora });
-conferir(f4.some((c) => c.id === todas[0].id) && f4.filter((c) => c.concept_id === todas[0].concept_id).length === 1, "carta errada hoje volta na mesma sessão, mas as irmãs dela continuam enterradas");
-
+conferir(montarFila(todas, { agora }).length === 21, "3 palavras × 7 cartas: as 21 entram na fila desde a criação (sem limite diário)");
+let semente = 1; const previsivel = () => ((semente = (semente * 16807) % 2147483647) / 2147483647);
+const ordem1 = montarFila(todas, { agora, aleatorio: previsivel }).map((c) => c.id).join();
+const ordem2 = montarFila(todas, { agora, aleatorio: previsivel }).map((c) => c.id).join();
+conferir(ordem1 !== todas.map((c) => c.id).join() && ordem1 !== ordem2, "a fila vem embaralhada (e muda a cada sessão)");
+conferir(new Set(montarFila(todas, { agora }).map((c) => c.id)).size === 21, "embaralhar não perde nem repete cartas");
+const comSuspensa = todas.map((c, i) => (i === 0 ? { ...c, suspended: true } : c));
+conferir(!montarFila(comSuspensa, { agora }).some((c) => c.id === todas[0].id), "carta suspensa não entra");
+const futura = todas.map((c, i) => (i === 1 ? { ...c, state: "REVIEW", due_at: "2026-11-20T10:00:00" } : c));
+conferir(!montarFila(futura, { agora }).some((c) => c.id === todas[1].id), "carta com revisão marcada para o futuro não entra");
 
 // Os mesmos testes rodam em cada adaptador de armazenamento
 async function testarRepositorio(nome, db) {
@@ -135,6 +145,11 @@ async function testarRepositorio(nome, db) {
   await repo.excluirPalavra(aguaSalva.concept.id);
   const semAgua = await repo.carregarBaralho(deck.id);
   conferir(semAgua.palavras.length === 2 && semAgua.cartas.length === 14 && (await repo.obterAudio(audio.id)) === null, "excluir palavra remove facetas, cartas e áudio dela");
+
+  const deckSemAudio = await repo.criarBaralho({ name: "Sem áudio", creation_mode: "words", target_language: "zh", level: "HSK 1", facetas_opcionais: [] });
+  const rs = await repo.adicionarPalavras(deckSemAudio.id, [base("lua")]);
+  conferir(rs.cartas === 3 && (await repo.audiosPendentes(deckSemAudio.id)).length === 0, "baralho sem áudio: 3 cartas por palavra e nenhuma gravação a gerar");
+  await repo.excluirBaralho(deckSemAudio.id);
 
   await repo.excluirBaralho(deck.id);
   conferir((await repo.listarBaralhos()).length === 0 && (await db.todos("facets")).length === 0 && (await db.todos("user_cards")).length === 0, "excluir baralho não deixa nada para trás");
