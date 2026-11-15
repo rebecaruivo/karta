@@ -76,12 +76,15 @@ const { fila: f1, enterradas: e1 } = montarFilaDoDia(todas, { agora });
 conferir(todas.length === 21 && f1.length === 3 && e1.length === 18, "3 palavras × 7 cartas: só 3 aparecem hoje (uma por palavra); 18 irmãs ficam para outro dia");
 conferir(f1.every((c) => c.bridge_template_id === "WORD_TO_MEANING"), "a primeira carta de cada palavra é a mais fácil (Palavra → Significado)");
 conferir(montarFilaDoDia(todas, { agora, limiteNovas: 2 }).fila.length === 2, "respeita o limite de cartas novas por dia");
-const estudada = todas.map((c, i) => (i === 0 ? { ...c, state: "REVIEW", last_review_at: "2026-11-15T09:00:00", due_at: "2026-11-15T10:00:00" } : c));
+const estudada = todas.map((c, i) => (i === 0 ? { ...c, state: "REVIEW", last_review_at: "2026-11-15T09:00:00", due_at: "2026-11-17T09:00:00" } : c));
 const { fila: f2 } = montarFilaDoDia(estudada, { agora });
-conferir(!f2.some((c) => c.concept_id === todas[0].concept_id), "palavra que já teve carta estudada hoje não volta hoje");
+conferir(!f2.some((c) => c.concept_id === todas[0].concept_id), "palavra que já teve carta estudada hoje: nenhuma irmã aparece hoje");
 const revisao = todas.map((c, i) => (i === 3 ? { ...c, state: "REVIEW", last_review_at: "2026-11-10T09:00:00", due_at: "2026-11-14T10:00:00" } : c));
 const { fila: f3 } = montarFilaDoDia(revisao, { agora });
 conferir(f3[0].id === todas[3].id, "revisão atrasada vem antes das cartas novas");
+const errada = todas.map((c, i) => (i === 0 ? { ...c, state: "LEARNING", last_review_at: "2026-11-15T14:50:00", due_at: "2026-11-15T14:59:00" } : c));
+const { fila: f4 } = montarFilaDoDia(errada, { agora });
+conferir(f4.some((c) => c.id === todas[0].id) && f4.filter((c) => c.concept_id === todas[0].concept_id).length === 1, "carta errada hoje volta na mesma sessão, mas as irmãs dela continuam enterradas");
 
 
 // Os mesmos testes rodam em cada adaptador de armazenamento
