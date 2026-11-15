@@ -10,6 +10,7 @@ import { apagarAudios, chaveAudio } from "@/lib/audios";
 import { gerarAudiosDoBaralho, audiosFaltando } from "@/lib/gerarAudios";
 import BotaoAudio from "@/components/BotaoAudio";
 import { exportarApkg } from "@/lib/exportarApkg";
+import { obterModoAudio, podeGerarAudio } from "@/lib/preferencias";
 
 const ROTULO_STATUS = { nova: "Nova", aprendendo: "Em aprendizado", dominada: "Dominada" };
 const ROTULO_AUDIO = { gerando: "Gerando áudio…", palavra: "Palavra pronta", pronto: "Áudio pronto", falhou: "Áudio falhou" };
@@ -24,8 +25,9 @@ export default function Baralho() {
   const [aviso, setAviso] = useState(null);
   const [exportando, setExportando] = useState(false);
   const [exportado, setExportado] = useState(null);
+  const [modoAudio, setModoAudio] = useState(null);
 
-  useEffect(() => setBaralho(obterBaralho(id)), [id]);
+  useEffect(() => { setBaralho(obterBaralho(id)); setModoAudio(obterModoAudio()); }, [id]);
 
   if (baralho === undefined) return null;
   if (baralho === null) return <p>Baralho não encontrado. <Link href="/">Voltar</Link></p>;
@@ -87,7 +89,7 @@ export default function Baralho() {
 
       {baralho.observacao && <p className="aviso" style={{ marginBottom: 20 }}>{baralho.observacao}</p>}
 
-      {(faltam > 0 || gerando) && (
+      {podeGerarAudio(modoAudio) && (faltam > 0 || gerando) && (
         <div className="aviso painel-audio">
           <div>
             <strong>{gerando ? "Gerando áudios com o Gemini…" : `${faltam} áudios por gerar`}</strong>

@@ -2,13 +2,17 @@
 // Configurações: chave do Gemini do visitante
 import { useEffect, useState } from "react";
 import { obterChave, salvarChave, removerChave } from "@/lib/chave";
+import { MODOS_AUDIO, obterModoAudio, salvarModoAudio } from "@/lib/preferencias";
 
 export default function Configuracoes() {
   const [valor, setValor] = useState("");
   const [salva, setSalva] = useState("");
   const [mensagem, setMensagem] = useState(null);
+  const [modoAudio, setModoAudio] = useState(null);
 
-  useEffect(() => setSalva(obterChave()), []);
+  useEffect(() => { setSalva(obterChave()); setModoAudio(obterModoAudio()); }, []);
+
+  function escolherModo(m) { salvarModoAudio(m); setModoAudio(m); }
 
   function salvar(e) {
     e.preventDefault();
@@ -53,6 +57,17 @@ export default function Configuracoes() {
         <div><button className="btn" type="submit">Salvar chave</button></div>
       </form>
       {mensagem && <p className="mu" style={{ marginTop: 12 }}>{mensagem}</p>}
+
+      <h2 className="d" style={{ fontSize: 20, marginTop: 36 }}>Áudio das cartas</h2>
+      <p className="mu" style={{ marginTop: 0 }}>De onde vem a voz que lê as palavras e as frases.</p>
+      <div style={{ display: "grid", gap: 10 }} role="radiogroup" aria-label="Modo de áudio">
+        {Object.entries(MODOS_AUDIO).map(([m, { rotulo, descricao }]) => (
+          <label key={m} className="aviso" style={{ display: "flex", gap: 12, cursor: "pointer", outline: modoAudio === m ? "2px solid var(--tinta)" : "none" }}>
+            <input type="radio" name="modo-audio" checked={modoAudio === m} onChange={() => escolherModo(m)} style={{ marginTop: 4 }} />
+            <span><strong>{rotulo}</strong><br /><span className="mu">{descricao}</span></span>
+          </label>
+        ))}
+      </div>
 
       <h2 className="d" style={{ fontSize: 20, marginTop: 36 }}>Como a chave é usada</h2>
       <ul className="mu" style={{ lineHeight: 1.7 }}>
