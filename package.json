@@ -11,7 +11,8 @@
     "postinstall": "node scripts/copiar-sqljs.mjs",
     "testar:apkg": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/testar-apkg.mjs",
     "testar:v2": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/testar-v2.mjs",
-    "prototipo:modulo2": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/prototipo-modulo2.mjs"
+    "prototipo:modulo2": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/prototipo-modulo2.mjs",
+    "testar:srs": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/testar-srs.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.0.0",
@@ -19,7 +20,8 @@
     "next": "^16.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "sql.js": "^1.10.0"
+    "sql.js": "^1.10.0",
+    "ts-fsrs": "^6.0.0"
   },
   "devDependencies": {
     "fake-indexeddb": "^6.0.0"
