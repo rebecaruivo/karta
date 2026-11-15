@@ -172,6 +172,17 @@ Testes: 37 no total (`npm run testar:v2`). Um deles falhou na primeira execuçã
 
 ---
 
+## v2 · Armazenamento (15/11)
+As tabelas da modelagem do CauanGS (`concepts`, `facets`, `bridge_templates`, `user_cards`), mais `decks` (documento de arquitetura) e `arquivos` (os áudios), agora ficam no **IndexedDB** do navegador, num banco separado da v1 (`karta-v2`). Não há tabela de usuários: cada navegador é de uma pessoa.
+
+**Repositório separado do armazenamento.** As operações ([`lib/v2/banco.js`](../lib/v2/banco.js)) falam com um adaptador ([`lib/v2/adaptadores.js`](../lib/v2/adaptadores.js)) que oferece sempre as mesmas cinco operações. Há dois: o IndexedDB, para o navegador, e um em memória, para os testes, já que o IndexedDB não existe no Node. Os mesmos testes rodam nos dois; para o do navegador, usa-se um simulador de IndexedDB instalado como dependência de desenvolvimento.
+
+O repositório cobre o que o documento pede para a tela do baralho: adicionar palavras sem reprocessar as antigas, excluir palavra (com facetas, cartas e áudio), suspender carta, áudio sob demanda e editar faceta. A edição segue a seção 6.4 (reinicia as cartas que usam a faceta e deixa o áudio pendente se a escrita ou a frase mudou), com uma proposta nossa: `reiniciar: false` para correções pequenas, como um acento, que não deveriam apagar o histórico de estudo. A função `cartasAfetadas` permite à interface avisar quantas cartas serão reiniciadas antes de confirmar: no teste, editar a escrita afeta 5 das 7 cartas da palavra.
+
+**Correção encontrada no caminho:** o Módulo 2 gerava IDs como `c1` e `f1`, que repetiriam entre baralhos. Com dados guardados, passaram a ser UUIDs.
+
+---
+
 ## Próximas etapas
 - [x] Áudio de cada carta (Gemini TTS, com a voz do navegador como plano B)
 - [x] Exportação `.apkg` para o Anki
