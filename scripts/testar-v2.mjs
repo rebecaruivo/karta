@@ -4,7 +4,8 @@ import { lerPalavras, validarTema } from "../lib/v2/portaEntrada.js";
 import { limparLista, montarPedido as pedidoM1, conferirNoHSK } from "../lib/v2/modulo1.js";
 import { montarPedido as pedidoM2, enriquecer } from "../lib/v2/modulo2.js";
 import { montarCartas, CATALOGO_PONTES } from "../lib/v2/pontes.js";
-import { montarFila } from "../lib/v2/sessao.js";
+import { montarFila, espacarPalavras } from "../lib/v2/sessao.js";
+import { separarPorGloss, separarRepetidas, escritasDoBaralho } from "../lib/v2/edicao.js";
 import { criarRepositorio } from "../lib/v2/banco.js";
 import { adaptadorMemoria, adaptadorIndexedDB } from "../lib/v2/adaptadores.js";
 import { podeGerarAudio, usaGravacao, usaVozDoNavegador } from "../lib/preferencias.js";
@@ -119,6 +120,26 @@ conferir(!montarFila(comSuspensa, { agora }).some((c) => c.id === todas[0].id), 
 const futura = todas.map((c, i) => (i === 1 ? { ...c, state: "REVIEW", due_at: "2026-11-20T10:00:00" } : c));
 conferir(!montarFila(futura, { agora }).some((c) => c.id === todas[1].id), "carta com revisão marcada para o futuro não entra");
 
+const vizinhas = (f) => f.some((c, i) => i > 0 && c.concept_id === f[i - 1].concept_id);
+let semVizinhas = true;
+let perdeu = false;
+for (let n = 0; n < 500; n++) { const f = montarFila(todas, { agora }); if (vizinhas(f)) semVizinhas = false; if (new Set(f.map((c) => c.id)).size !== 21) perdeu = true; }
+conferir(semVizinhas && !perdeu, "duas cartas da mesma palavra nunca aparecem em sequência, sem perder cartas (500 filas sorteadas)");
+const sobrou = espacarPalavras([{ id: 1, concept_id: "a" }, { id: 2, concept_id: "a" }]);
+conferir(sobrou.length === 2, "se só sobrou uma palavra, a sequência é aceita (nenhuma carta se perde)");
+
+const cabeca = { id: "x", concept_id: "a" };
+const resto = espacarPalavras([cabeca, { id: 1, concept_id: "a" }, { id: 2, concept_id: "b" }, { id: 3, concept_id: "c" }]);
+conferir(resto[0] === cabeca && !vizinhas(resto), "no estudo, a carta respondida fica parada e a próxima nunca é da mesma palavra");
+
+console.log("\n— Editar baralho já criado");
+const doBaralho = [base("água"), base("chá", { lemma: "茶" })];
+const porGloss = separarPorGloss([{ gloss: "Água" }, { gloss: "sol" }, { gloss: "sol " }], doBaralho);
+conferir(porGloss.seguir.map((p) => p.gloss).join() === "sol" && porGloss.repetidas.length === 2, "palavra digitada que o baralho já tem (ou repetida na lista) não vai para a IA");
+const rep = separarRepetidas([base("xícara", { lemma: "茶" }), base("sol", { lemma: "太阳" }), base("astro", { lemma: "太阳" })], doBaralho);
+conferir(rep.novas.length === 1 && rep.repetidas.length === 2, "depois do Módulo 2, mandarim que o baralho já tem (ou repetido no lote) não entra de novo");
+conferir(escritasDoBaralho(doBaralho).join() === "水,茶", "\"pedir mais à IA\" recebe as escritas do baralho para não repetir");
+
 // Os mesmos testes rodam em cada adaptador de armazenamento
 async function testarRepositorio(nome, db) {
   console.log(`\n— Armazenamento (${nome})`);
@@ -160,6 +181,13 @@ async function testarRepositorio(nome, db) {
   const audio = fac.find((f) => f.facet_type === "AUDIO");
   await repo.salvarAudio(audio.id, "bytes-do-wav");
   conferir((await repo.obterAudio(audio.id)) === "bytes-do-wav" && !(await repo.audiosPendentes(deck.id)).some((a) => a.id === audio.id), "áudio salvo vira ready e sai da contagem de pendentes");
+
+  const posAntes = (await repo.carregarBaralho(deck.id)).palavras.map((p) => p.concept.gloss).join();
+  const chaSalvo = (await repo.carregarBaralho(deck.id)).palavras[1];
+  await repo.substituirPalavra(chaSalvo.concept.id, base("chá", { lemma: "茶" }));
+  const trocado = await repo.carregarBaralho(deck.id);
+  conferir(trocado.palavras.map((p) => p.concept.gloss).join() === posAntes && trocado.palavras[1].facets.find((f) => f.facet_type === "WORD").value === "茶", "gerar de novo: a nova versão fica no mesmo lugar da lista");
+  conferir(trocado.cartas.length === 21 && !trocado.cartas.some((c) => c.concept_id === chaSalvo.concept.id), "gerar de novo: as cartas antigas saem e as novas entram (7 por palavra)");
 
   await repo.suspenderCarta(estudada.id);
   conferir((await repo.carregarBaralho(deck.id)).cartas.find((c) => c.id === estudada.id).suspended === true, "suspender carta (em vez de excluir)");
