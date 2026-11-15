@@ -59,5 +59,51 @@ conferir(fldsA.split("\x1f").length === modelo.flds.length && fldsA.includes("[s
 const somMidia = await zip.file(Object.keys(midia).find((k) => midia[k] === "karta_a_palavra.wav")).async("uint8array");
 conferir(Buffer.from(somMidia.subarray(0, 4)).toString() === "RIFF", "áudio dentro do ZIP é um WAV válido");
 
-console.log(falhas ? `\n${falhas} verificação(ões) falharam.` : "\nTudo certo. Para conferir de verdade, importe amostra.apkg no Anki.");
+// ── v2: cartas por conexão ──────────────────────────────────────
+console.log("\n— v2 (cartas por conexão)");
+const { montarApkgV2, TIPOS_V2 } = await import("../lib/v2/apkg.js");
+const { montarPalavraEnriquecida } = await import("../lib/v2/facetas.js");
+const { montarCartas } = await import("../lib/v2/pontes.js");
+
+const ia = (lemma, pinyin, meaning, sentence, alvo, sentence_pinyin, sentence_translation) =>
+  ({ lemma, pinyin, pos: "substantivo", meaning, sentence, target_in_sentence: alvo, sentence_pinyin, sentence_translation, level_fit: true });
+const palavrasV2 = [
+  montarPalavraEnriquecida({ id: "w1", gloss: "água" }, ia("水", "shuǐ", "água", "我想喝水。", "水", "wǒ xiǎng hē shuǐ.", "Eu quero beber água."), { deck_id: "d", language: "zh", origin: "user" }),
+  montarPalavraEnriquecida({ id: "w2", gloss: "chá" }, ia("茶", "chá", "chá & <infusão>", "这是我的茶。", "茶", "zhè shì wǒ de chá.", "Este é o meu chá."), { deck_id: "d", language: "zh", origin: "user" }),
+];
+const { cartas: cartasV2 } = montarCartas(palavrasV2);
+cartasV2.find((c) => c.concept_id === palavrasV2[1].concept.id && c.bridge_template_id === "WORD_TO_MEANING").suspended = true;
+// Só o áudio da palavra "água" foi gravado
+const audioAgua = palavrasV2[0].facets.find((f) => f.facet_type === "AUDIO" && f.parent_facet_id === palavrasV2[0].facets[0].id);
+audioAgua.status = "ready";
+const deckV2 = { id: "deck-v2", name: "Bebidas", level: "HSK 1", facetas_opcionais: ["AUDIO"], modelo: "teste" };
+
+const v2 = await montarApkgV2({ SQL, JSZip, deck: deckV2, palavras: palavrasV2, cartas: cartasV2, obterAudio: async (id) => (id === audioAgua.id ? wav : null) });
+writeFileSync("amostra-v2.apkg", v2.bytes);
+console.log(`Gerado amostra-v2.apkg (${v2.bytes.length} bytes) · ${JSON.stringify(v2.resumo)}`);
+const zipV2 = await JSZip.loadAsync(v2.bytes);
+const dbV2 = new SQL.Database(await zipV2.file("collection.anki2").async("uint8array"));
+const q = (sql) => dbV2.exec(sql)[0]?.values ?? [];
+const [modelsV2] = q("select models from col")[0].map((t) => JSON.parse(t));
+const modeloV2 = Object.values(modelsV2)[0];
+conferir(modeloV2.tmpls.length === 7 && modeloV2.id !== modelo.id, "modelo próprio da v2, com 7 tipos de cartão (um por ponte), separado do modelo da v1");
+conferir(q("select count(*) from notes")[0][0] === 2 && q("select count(*) from cards")[0][0] === 13, "uma nota por palavra e um cartão por carta do Karta (14 cartas − 1 suspensa = 13)");
+conferir(TIPOS_V2[0].ponte === "WORD_TO_MEANING" && TIPOS_V2[6].ponte === "MEANING_TO_SENTENCE", "tipos de cartão na ordem de apresentação do catálogo (fácil → difícil)");
+const midiaV2 = JSON.parse(await zipV2.file("media").async("string"));
+conferir(Object.keys(midiaV2).length === 1 && v2.resumo.semGravacao === 3, "só a gravação pronta vai no pacote (1); as outras 3 ficam com a voz do sistema do Anki");
+conferir(modeloV2.tmpls.some((t) => t.qfmt.includes("{{tts zh_CN:Palavra}}")), "sem gravação, o cartão de áudio usa {{tts}} do Anki (equivalente à voz do navegador)");
+const [fAgua] = q(`select flds from notes where guid = 'karta-v2-${palavrasV2[0].concept.id}'`)[0];
+const camposAgua = fAgua.split("\x1f");
+conferir(camposAgua[6].includes('<span class="lacuna"></span>') && camposAgua[5].includes('<span class="destaque">水</span>'), "frase com lacuna e com destaque montadas pelas posições calculadas no código");
+conferir(camposAgua[9].startsWith("[sound:") && camposAgua[11] === "1", "áudio gravado entra como [sound:] e o baralho marca que tem exercícios de áudio");
+const [fCha] = q(`select flds from notes where guid = 'karta-v2-${palavrasV2[1].concept.id}'`)[0];
+conferir(fCha.includes("chá &amp; &lt;infusão&gt;"), "v2 também escapa <, > e &");
+
+const semAudio = montarCartas(palavrasV2, { facetasOpcionais: [] }).cartas;
+const v2s = await montarApkgV2({ SQL, JSZip, deck: { ...deckV2, id: "sem", facetas_opcionais: [] }, palavras: palavrasV2, cartas: semAudio, obterAudio: async () => wav });
+const dbS = new SQL.Database(await (await JSZip.loadAsync(v2s.bytes)).file("collection.anki2").async("uint8array"));
+const fldsS = dbS.exec("select flds from notes")[0].values.map(([f]) => f.split("\x1f"));
+conferir(dbS.exec("select count(*) from cards")[0].values[0][0] === 6 && fldsS.every((f) => f[11] === "" && f[9] === ""), "baralho sem áudio: 3 cartões por palavra, sem gravações e sem o botão \"Ouvir frase\"");
+
+console.log(falhas ? `\n${falhas} verificação(ões) falharam.` : "\nTudo certo. Para conferir de verdade, importe amostra.apkg e amostra-v2.apkg no Anki.");
 process.exit(falhas ? 1 : 0);

@@ -12,6 +12,7 @@ import { obterModoAudio, podeGerarAudio } from "@/lib/preferencias";
 import { lerPalavras, LIMITES } from "@/lib/v2/portaEntrada";
 import { separarPorGloss, separarRepetidas, escritasDoBaralho } from "@/lib/v2/edicao";
 import { cabecalhosComChave } from "@/lib/chave";
+import { exportarApkgV2 } from "@/lib/v2/exportarApkg";
 
 const MAIS_POR_VEZ = 5;
 
@@ -265,6 +266,7 @@ export default function BaralhoV2() {
   const [selecionadas, setSelecionadas] = useState(() => new Set());
   const [corrigindo, setCorrigindo] = useState([]); // concept ids com o painel de correção aberto
   const [mensagem, setMensagem] = useState(null);
+  const [exportando, setExportando] = useState(false);
 
   const carregar = async () => {
     const repo = await obterRepo();
@@ -327,6 +329,19 @@ export default function BaralhoV2() {
     else if (r.falhas) setAvisoAudio(`${r.falhas} gravações falharam. Clique de novo para tentar.`);
     carregar();
   }
+  async function exportar() {
+    setExportando(true); setMensagem(null);
+    try {
+      const r = await exportarApkgV2(await obterRepo(), deck.id);
+      const partes = [`Baixado: ${r.notas} palavras e ${r.cartoes} cartões, no baralho “${r.nomeBaralho}”. No Anki, use Arquivo → Importar.`];
+      if (comAudio && r.semGravacao) partes.push(`${r.semGravacao} gravações ainda não foram geradas; nesses cartões o Anki usa a voz do sistema.`);
+      partes.push("O histórico de estudo não vai junto: os cartões chegam novos.");
+      setMensagem(partes.join(" "));
+    } catch (err) {
+      setMensagem(`⚠ Não consegui exportar: ${err.message}`);
+    } finally { setExportando(false); }
+  }
+
   async function excluirBaralho() {
     if (!window.confirm("Excluir o baralho inteiro? Não dá para desfazer.")) return;
     await (await obterRepo()).excluirBaralho(deck.id);
@@ -339,7 +354,10 @@ export default function BaralhoV2() {
       <div className="cabecalho" style={{ marginTop: 12 }}>
         <div>
           <h1><span className="z">中</span> {deck.name}</h1>
-          <p className="mu">Mandarim · {deck.level} · {palavras.length} palavras · {cartas.length} cartas</p>
+          <p className="mu">
+            Mandarim · {deck.level} · {palavras.length} palavras · {cartas.length} cartas
+            {palavras.length > 0 && <> · <button className="v2-link" style={{ fontWeight: 500 }} onClick={exportar} disabled={exportando}>{exportando ? "Exportando…" : "Exportar para o Anki"}</button></>}
+          </p>
         </div>
         <div className="acoes">
           <div className="v2-menu-ancora">
