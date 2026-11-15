@@ -246,6 +246,26 @@ Testes novos cobrem a porta de entrada do tema, a limpeza da lista, o pedido do 
 
 ---
 
+## v2 · Editar o baralho depois de criado e ajustes da interface (15/11)
+Até aqui, um baralho criado não mudava mais. Agora o botão **Editar** dá três caminhos:
+- **Acrescentar palavras:** digitando ou pedindo à IA sobre um tema (o Módulo 1 recebe as palavras que o baralho já tem, para não repetir), com a mesma revisão da criação antes de gerar as cartas.
+- **Corrigir ou excluir em massa:** caixas de seleção à direita das palavras e uma barra com "Corrigir" e "Excluir".
+- **Excluir baralho.**
+
+Decisões:
+- **Repetição barrada em duas etapas.** Antes da IA, pelo texto em português ("Água" e "água" são a mesma). Depois do Módulo 2, pelo mandarim: "copo" e "xícara" podem virar a mesma palavra, e entrariam cartas duplicadas.
+- **Corrigir não apaga o estudo por padrão.** Editar o significado, o pinyin ou a tradução mostra quantas cartas usam aquilo e pergunta se o estudo delas deve recomeçar; a caixa vem desmarcada, porque um erro de digitação ("maã") não muda o que a pessoa aprendeu. É a proposta `reiniciar: false` que já estava no banco, agora com interface.
+- **"Gerar de novo"** para erros maiores, com a palavra em português editável e um campo de sentido. A versão nova fica no mesmo lugar da lista. No primeiro teste, o campo de sentido foi lido como "trocar a palavra" (digitei "comidas" ali): a correção foi separar os dois campos, com nomes claros, e o aviso final dizer o que mudou.
+- **O tema do "pedir à IA" é editável.** A primeira versão usava o nome do baralho como tema, e "Meu baralho" virou um pedido sem sentido. Agora o campo vem com o tema do baralho, se houver, e o tema que funcionar fica salvo.
+
+**Estudo:**
+- **Duas cartas da mesma palavra nunca aparecem em sequência** (a melhoria leve anotada quando o embaralhamento entrou). A primeira versão falhava no fim da fila, quando só sobram cartas de uma palavra; a correção devolve a carta para um ponto anterior. Um teste sorteia 500 filas e confere que nenhuma carta se perde. Um caso de teste que eu tinha escrito não tinha solução possível, e foi o teste que estava errado, não o código.
+- **A barra de progresso andava só quando uma carta saía da sessão.** Como uma carta nova volta em 10 minutos (passo de fixação do FSRS), na primeira volta nada saía e a barra ficava parada. Agora ela conta as cartas vistas e mostra quantas faltam rever.
+
+**Interface, a partir do uso:** criar baralho virou uma página própria; ações secundárias viraram links de texto (menos pills); os botões do estudo voltaram ao padrão da v1, sem o tempo de cada resposta e com os atalhos numa linha discreta; avisos de erro só com ⚠, sem a caixa pontilhada; campos menores nos painéis.
+
+---
+
 ## Próximas etapas
 - [x] Áudio de cada carta (Gemini TTS, com a voz do navegador como plano B)
 - [x] Exportação `.apkg` para o Anki
