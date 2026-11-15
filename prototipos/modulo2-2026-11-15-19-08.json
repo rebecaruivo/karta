@@ -1,0 +1,742 @@
+{
+  "metricas": {
+    "modelo": "gemini-flash-lite-latest",
+    "palavras": 10,
+    "chamadas": 1,
+    "tempoTotalS": 3,
+    "tokensEntrada": 465,
+    "tokensSaida": 1158,
+    "tokensPensamento": 0,
+    "palavrasSemProblema": 10,
+    "lacunasValidas": 10
+  },
+  "chamadas": [
+    {
+      "palavras": 10,
+      "ms": 3013,
+      "tokensEntrada": 465,
+      "tokensSaida": 1158,
+      "tokensPensamento": null
+    }
+  ],
+  "wordList": {
+    "origin": "user",
+    "theme": null,
+    "target_language": "zh",
+    "level": "HSK 2",
+    "words": [
+      {
+        "id": "w1",
+        "gloss": "água",
+        "sense_hint": null
+      },
+      {
+        "id": "w2",
+        "gloss": "arroz",
+        "sense_hint": null
+      },
+      {
+        "id": "w3",
+        "gloss": "comer",
+        "sense_hint": null
+      },
+      {
+        "id": "w4",
+        "gloss": "bonito",
+        "sense_hint": null
+      },
+      {
+        "id": "w5",
+        "gloss": "ônibus",
+        "sense_hint": null
+      },
+      {
+        "id": "w6",
+        "gloss": "obrigado",
+        "sense_hint": null
+      },
+      {
+        "id": "w7",
+        "gloss": "banco",
+        "sense_hint": null
+      },
+      {
+        "id": "w8",
+        "gloss": "manga",
+        "sense_hint": "fruta"
+      },
+      {
+        "id": "w9",
+        "gloss": "pegar",
+        "sense_hint": null
+      },
+      {
+        "id": "w10",
+        "gloss": "saudade",
+        "sense_hint": null
+      }
+    ]
+  },
+  "resultados": [
+    {
+      "concept": {
+        "id": "c1",
+        "deck_id": "d1",
+        "language": "zh",
+        "origin": "user",
+        "sense_hint": null,
+        "gloss": "água"
+      },
+      "facets": [
+        {
+          "id": "f2",
+          "facet_type": "WORD",
+          "value": "水",
+          "metadata": {
+            "pinyin": "shuǐ",
+            "pos": "substantivo"
+          },
+          "status": "ready",
+          "edited_by_user": false
+        },
+        {
+          "id": "f3",
+          "facet_type": "MEANING",
+          "value": "água",
+          "metadata": {},
+          "status": "ready",
+          "edited_by_user": false
+        },
+        {
+          "id": "f4",
+          "facet_type": "SENTENCE",
+          "value": "我想喝水。",
+          "metadata": {
+            "pinyin": "wǒ xiǎng hē shuǐ.",
+            "translation": "Eu quero beber água.",
+            "cloze_indices": [
+              3,
+              4
+            ]
+          },
+          "status": "ready",
+          "edited_by_user": false
+        },
+        {
+          "id": "f5",
+          "facet_type": "AUDIO",
+          "parent_facet_id": "f2",
+          "value": null,
+          "metadata": {},
+          "status": "pending",
+          "edited_by_user": false
+        },
+        {
+          "id": "f6",
+          "facet_type": "AUDIO",
+          "parent_facet_id": "f4",
+          "value": null,
+          "metadata": {},
+          "status": "pending",
+          "edited_by_user": false
+        }
+      ],
+      "problemas": [],
+      "nota": null
+    },
+    {
+      "concept": {
+        "id": "c7",
+        "deck_id": "d1",
+        "language": "zh",
+        "origin": "user",
+        "sense_hint": null,
+        "gloss": "arroz"
+      },
+      "facets": [
+        {
+          "id": "f8",
+          "facet_type": "WORD",
+          "value": "米饭",
+          "metadata": {
+            "pinyin": "mǐfàn",
+            "pos": "substantivo"
+          },
+          "status": "ready",
+          "edited_by_user": false
+        },
+        {
+          "id": "f9",
+          "facet_type": "MEANING",
+          "value": "arroz",
+          "metadata": {},
+          "status": "ready",
+          "edited_by_user": false
+        },
+        {
+          "id": "f10",
+          "facet_type": "SENTENCE",
+          "value": "我吃米饭。",
+          "metadata": {
+            "pinyin": "wǒ chī mǐfàn.",
+            "translation": "Eu como arroz.",
+            "cloze_indices": [
+              2,
+              4
+            ]
+          },
+          "status": "ready",
+          "edited_by_user": false
+        },
+        {
+          "id": "f11",
+          "facet_type": "AUDIO",
+          "parent_facet_id": "f8",
+          "value": null,
+          "metadata": {},
+          "status": "pending",
+          "edited_by_user": false
+        },
+        {
+          "id": "f12",
+          "facet_type": "AUDIO",
+          "parent_facet_id": "f10",
+          "value": null,
+          "metadata": {},
+          "status": "pending",
+          "edited_by_user": false
+        }
+      ],
+      "problemas": [],
+      "nota": null
+    },
+    {
+      "concept": {
+        "id": "c13",
+        "deck_id": "d1",
+        "language": "zh",
+        "origin": "user",
+        "sense_hint": null,
+        "gloss": "comer"
+      },
+      "facets": [
+        {
+          "id": "f14",
+          "facet_type": "WORD",
+          "value": "吃",
+          "metadata": {
+            "pinyin": "chī",
+            "pos": "verbo"
+          },
+          "status": "ready",
+          "edited_by_user": false
+        },
+        {
+          "id": "f15",
+          "facet_type": "MEANING",
+          "value": "comer",
+          "metadata": {},
+          "status": "ready",
+          "edited_by_user": false
+        },
+        {
+          "id": "f16",
+          "facet_type": "SENTENCE",
+          "value": "你想吃什么？",
+          "metadata": {
+            "pinyin": "nǐ xiǎng chī shénme?",
+            "translation": "O que você quer comer?",
+            "cloze_indices": [
+              2,
+              3
+            ]
+          },
+          "status": "ready",
+          "edited_by_user": false
+        },
+        {
+          "id": "f17",
+          "facet_type": "AUDIO",
+          "parent_facet_id": "f14",
+          "value": null,
+          "metadata": {},
+          "status": "pending",
+          "edited_by_user": false
+        },
+        {
+          "id": "f18",
+          "facet_type": "AUDIO",
+          "parent_facet_id": "f16",
+          "value": null,
+          "metadata": {},
+          "status": "pending",
+          "edited_by_user": false
+        }
+      ],
+      "problemas": [],
+      "nota": null
+    },
+    {
+      "concept": {
+        "id": "c19",
+        "deck_id": "d1",
+        "language": "zh",
+        "origin": "user",
+        "sense_hint": null,
+        "gloss": "bonito"
+      },
+      "facets": [
+        {
+          "id": "f20",
+          "facet_type": "WORD",
+          "value": "漂亮",
+          "metadata": {
+            "pinyin": "piàoliang",
+            "pos": "adjetivo"
+          },
+          "status": "ready",
+          "edited_by_user": false
+        },
+        {
+          "id": "f21",
+          "facet_type": "MEANING",
+          "value": "bonito",
+          "metadata": {},
+          "status": "ready",
+          "edited_by_user": false
+        },
+        {
+          "id": "f22",
+          "facet_type": "SENTENCE",
+          "value": "她很漂亮。",
+          "metadata": {
+            "pinyin": "tā hěn piàoliang.",
+            "translation": "Ela é muito bonita.",
+            "cloze_indices": [
+              2,
+              4
+            ]
+          },
+          "status": "ready",
+          "edited_by_user": false
+        },
+        {
+          "id": "f23",
+          "facet_type": "AUDIO",
+          "parent_facet_id": "f20",
+          "value": null,
+          "metadata": {},
+          "status": "pending",
+          "edited_by_user": false
+        },
+        {
+          "id": "f24",
+          "facet_type": "AUDIO",
+          "parent_facet_id": "f22",
+          "value": null,
+          "metadata": {},
+          "status": "pending",
+          "edited_by_user": false
+        }
+      ],
+      "problemas": [],
+      "nota": null
+    },
+    {
+      "concept": {
+        "id": "c25",
+        "deck_id": "d1",
+        "language": "zh",
+        "origin": "user",
+        "sense_hint": null,
+        "gloss": "ônibus"
+      },
+      "facets": [
+        {
+          "id": "f26",
+          "facet_type": "WORD",
+          "value": "公共汽车",
+          "metadata": {
+            "pinyin": "gōnggòng qìchē",
+            "pos": "substantivo"
+          },
+          "status": "ready",
+          "edited_by_user": false
+        },
+        {
+          "id": "f27",
+          "facet_type": "MEANING",
+          "value": "ônibus",
+          "metadata": {},
+          "status": "ready",
+          "edited_by_user": false
+        },
+        {
+          "id": "f28",
+          "facet_type": "SENTENCE",
+          "value": "我坐公共汽车。",
+          "metadata": {
+            "pinyin": "wǒ zuò gōnggòng qìchē.",
+            "translation": "Eu pego o ônibus.",
+            "cloze_indices": [
+              2,
+              6
+            ]
+          },
+          "status": "ready",
+          "edited_by_user": false
+        },
+        {
+          "id": "f29",
+          "facet_type": "AUDIO",
+          "parent_facet_id": "f26",
+          "value": null,
+          "metadata": {},
+          "status": "pending",
+          "edited_by_user": false
+        },
+        {
+          "id": "f30",
+          "facet_type": "AUDIO",
+          "parent_facet_id": "f28",
+          "value": null,
+          "metadata": {},
+          "status": "pending",
+          "edited_by_user": false
+        }
+      ],
+      "problemas": [],
+      "nota": null
+    },
+    {
+      "concept": {
+        "id": "c31",
+        "deck_id": "d1",
+        "language": "zh",
+        "origin": "user",
+        "sense_hint": null,
+        "gloss": "obrigado"
+      },
+      "facets": [
+        {
+          "id": "f32",
+          "facet_type": "WORD",
+          "value": "谢谢",
+          "metadata": {
+            "pinyin": "xièxie",
+            "pos": "expressão"
+          },
+          "status": "ready",
+          "edited_by_user": false
+        },
+        {
+          "id": "f33",
+          "facet_type": "MEANING",
+          "value": "obrigado",
+          "metadata": {},
+          "status": "ready",
+          "edited_by_user": false
+        },
+        {
+          "id": "f34",
+          "facet_type": "SENTENCE",
+          "value": "谢谢你。",
+          "metadata": {
+            "pinyin": "xièxie nǐ.",
+            "translation": "Obrigado a você.",
+            "cloze_indices": [
+              0,
+              2
+            ]
+          },
+          "status": "ready",
+          "edited_by_user": false
+        },
+        {
+          "id": "f35",
+          "facet_type": "AUDIO",
+          "parent_facet_id": "f32",
+          "value": null,
+          "metadata": {},
+          "status": "pending",
+          "edited_by_user": false
+        },
+        {
+          "id": "f36",
+          "facet_type": "AUDIO",
+          "parent_facet_id": "f34",
+          "value": null,
+          "metadata": {},
+          "status": "pending",
+          "edited_by_user": false
+        }
+      ],
+      "problemas": [],
+      "nota": null
+    },
+    {
+      "concept": {
+        "id": "c37",
+        "deck_id": "d1",
+        "language": "zh",
+        "origin": "user",
+        "sense_hint": null,
+        "gloss": "banco"
+      },
+      "facets": [
+        {
+          "id": "f38",
+          "facet_type": "WORD",
+          "value": "银行",
+          "metadata": {
+            "pinyin": "yínháng",
+            "pos": "substantivo"
+          },
+          "status": "ready",
+          "edited_by_user": false
+        },
+        {
+          "id": "f39",
+          "facet_type": "MEANING",
+          "value": "banco",
+          "metadata": {},
+          "status": "ready",
+          "edited_by_user": false
+        },
+        {
+          "id": "f40",
+          "facet_type": "SENTENCE",
+          "value": "我去银行。",
+          "metadata": {
+            "pinyin": "wǒ qù yínháng.",
+            "translation": "Eu vou ao banco.",
+            "cloze_indices": [
+              2,
+              4
+            ]
+          },
+          "status": "ready",
+          "edited_by_user": false
+        },
+        {
+          "id": "f41",
+          "facet_type": "AUDIO",
+          "parent_facet_id": "f38",
+          "value": null,
+          "metadata": {},
+          "status": "pending",
+          "edited_by_user": false
+        },
+        {
+          "id": "f42",
+          "facet_type": "AUDIO",
+          "parent_facet_id": "f40",
+          "value": null,
+          "metadata": {},
+          "status": "pending",
+          "edited_by_user": false
+        }
+      ],
+      "problemas": [],
+      "nota": null
+    },
+    {
+      "concept": {
+        "id": "c43",
+        "deck_id": "d1",
+        "language": "zh",
+        "origin": "user",
+        "sense_hint": "fruta",
+        "gloss": "manga"
+      },
+      "facets": [
+        {
+          "id": "f44",
+          "facet_type": "WORD",
+          "value": "芒果",
+          "metadata": {
+            "pinyin": "mángguǒ",
+            "pos": "substantivo"
+          },
+          "status": "ready",
+          "edited_by_user": false
+        },
+        {
+          "id": "f45",
+          "facet_type": "MEANING",
+          "value": "manga",
+          "metadata": {},
+          "status": "ready",
+          "edited_by_user": false
+        },
+        {
+          "id": "f46",
+          "facet_type": "SENTENCE",
+          "value": "我喜欢芒果。",
+          "metadata": {
+            "pinyin": "wǒ xǐhuān mángguǒ.",
+            "translation": "Eu gosto de manga.",
+            "cloze_indices": [
+              3,
+              5
+            ]
+          },
+          "status": "ready",
+          "edited_by_user": false
+        },
+        {
+          "id": "f47",
+          "facet_type": "AUDIO",
+          "parent_facet_id": "f44",
+          "value": null,
+          "metadata": {},
+          "status": "pending",
+          "edited_by_user": false
+        },
+        {
+          "id": "f48",
+          "facet_type": "AUDIO",
+          "parent_facet_id": "f46",
+          "value": null,
+          "metadata": {},
+          "status": "pending",
+          "edited_by_user": false
+        }
+      ],
+      "problemas": [],
+      "nota": null
+    },
+    {
+      "concept": {
+        "id": "c49",
+        "deck_id": "d1",
+        "language": "zh",
+        "origin": "user",
+        "sense_hint": null,
+        "gloss": "pegar"
+      },
+      "facets": [
+        {
+          "id": "f50",
+          "facet_type": "WORD",
+          "value": "拿",
+          "metadata": {
+            "pinyin": "ná",
+            "pos": "verbo"
+          },
+          "status": "ready",
+          "edited_by_user": false
+        },
+        {
+          "id": "f51",
+          "facet_type": "MEANING",
+          "value": "pegar",
+          "metadata": {},
+          "status": "ready",
+          "edited_by_user": false
+        },
+        {
+          "id": "f52",
+          "facet_type": "SENTENCE",
+          "value": "请拿给我。",
+          "metadata": {
+            "pinyin": "qǐng ná gěi wǒ.",
+            "translation": "Por favor, pegue para mim.",
+            "cloze_indices": [
+              1,
+              2
+            ]
+          },
+          "status": "ready",
+          "edited_by_user": false
+        },
+        {
+          "id": "f53",
+          "facet_type": "AUDIO",
+          "parent_facet_id": "f50",
+          "value": null,
+          "metadata": {},
+          "status": "pending",
+          "edited_by_user": false
+        },
+        {
+          "id": "f54",
+          "facet_type": "AUDIO",
+          "parent_facet_id": "f52",
+          "value": null,
+          "metadata": {},
+          "status": "pending",
+          "edited_by_user": false
+        }
+      ],
+      "problemas": [],
+      "nota": null
+    },
+    {
+      "concept": {
+        "id": "c55",
+        "deck_id": "d1",
+        "language": "zh",
+        "origin": "user",
+        "sense_hint": null,
+        "gloss": "saudade"
+      },
+      "facets": [
+        {
+          "id": "f56",
+          "facet_type": "WORD",
+          "value": "想念",
+          "metadata": {
+            "pinyin": "xiǎngniàn",
+            "pos": "verbo"
+          },
+          "status": "ready",
+          "edited_by_user": false
+        },
+        {
+          "id": "f57",
+          "facet_type": "MEANING",
+          "value": "ter saudade",
+          "metadata": {},
+          "status": "ready",
+          "edited_by_user": false
+        },
+        {
+          "id": "f58",
+          "facet_type": "SENTENCE",
+          "value": "我很想念你。",
+          "metadata": {
+            "pinyin": "wǒ hěn xiǎngniàn nǐ.",
+            "translation": "Sinto muita saudade de você.",
+            "cloze_indices": [
+              2,
+              4
+            ]
+          },
+          "status": "ready",
+          "edited_by_user": false
+        },
+        {
+          "id": "f59",
+          "facet_type": "AUDIO",
+          "parent_facet_id": "f56",
+          "value": null,
+          "metadata": {},
+          "status": "pending",
+          "edited_by_user": false
+        },
+        {
+          "id": "f60",
+          "facet_type": "AUDIO",
+          "parent_facet_id": "f58",
+          "value": null,
+          "metadata": {},
+          "status": "pending",
+          "edited_by_user": false
+        }
+      ],
+      "problemas": [],
+      "nota": null
+    }
+  ]
+}

@@ -132,6 +132,35 @@ O Karta foi publicado no Vercel. No primeiro teste com um baralho de japonês, a
 
 ---
 
+## v2 · Protótipo do Módulo 2 (15/11)
+A v2 muda o cerne do Karta: a unidade central passa a ser a palavra com suas facetas, e as cartas são derivadas por pontes ([arquitetura](arquitetura/), [modelagem de dados de CauanGS](modelagem/)). Seguindo o próprio documento, o primeiro passo foi prototipar o **Módulo 2** (enriquecimento de facetas) para mandarim e medir qualidade e consumo antes de construir o resto.
+
+**Decisões antes de começar** (a partir da análise do documento):
+- Dados no navegador, sem usuários: a modelagem do Cauan não define tabela de usuários nem `user_id`, então serve para uso sem login.
+- A lacuna é calculada pelo código: a IA devolve o trecho exato da palavra na frase e o código acha a posição, no formato [início, fim). Funciona com verbo conjugado (japonês 飲みます, francês *mange*), caso que quebraria a regra original de "a palavra aparece na frase".
+- A versão lenta do áudio é tocada mais devagar no navegador, sem gerar um segundo arquivo (a cota de voz é curta).
+- 10 palavras por chamada, por causa do limite de pedidos por minuto.
+
+Antes de chamar a IA, 24 testes automáticos ([`scripts/testar-v2.mjs`](../scripts/testar-v2.mjs)) cobrem a porta de entrada, a lacuna em três idiomas, a validação do perfil mandarim e o formato das facetas.
+
+**Três rodadas com a mesma lista**, que tem casos difíceis de propósito (palavras ambíguas, verbo genérico, "saudade"). Relatórios em [`prototipos/`](../prototipos/).
+
+| | v1 · lite | v2 · lite | v2 · 3.5-flash |
+|---|---|---|---|
+| Escrita, pinyin e tons corretos | 10/10 | 10/10 | 10/10 |
+| Lacunas válidas | 10/10 | 10/10 | 10/10 |
+| Ambiguidades avisadas ("banco", "pegar") | 0 | 2 | 2 (e 1 falsa) |
+| "saudade" | 想念 (HSK 4), sem aviso | 想念, sem aviso | 想, como em 我想你了 (nível básico) |
+| Tempo | 3 s | 3,4 s | 12,3 s |
+| Tokens (saída + raciocínio) | 1.158 | 1.415 | 3.554 |
+
+**O que cada rodada ensinou:**
+- **v1 → v2.** O campo de aviso era opcional e o modelo nunca o preenchia. Virou três campos obrigatórios (`ambiguous`, `other_senses`, `level_fit`): com saída estruturada, o modelo é obrigado a decidir. A maiúscula do pinyin da frase passou a ser feita pelo código, porque é regra fixa.
+- **Lite × 3.5.** No essencial, os dois acertam tudo. O 3.5 julga melhor (escolhe palavras do nível, frases mais naturais), mas leva 3,6× mais tempo por causa do raciocínio. Decisão: o lite fica como padrão, e a verificação de nível deve vir da lista oficial do HSK, que é um dado, não da opinião do modelo.
+- **v2 → v3.** O 3.5 marcou "manga (fruta)" como ambígua mesmo com a dica de sentido. Regra nova no prompt: com dica, a ambiguidade já está resolvida.
+
+---
+
 ## Próximas etapas
 - [x] Áudio de cada carta (Gemini TTS, com a voz do navegador como plano B)
 - [x] Exportação `.apkg` para o Anki
