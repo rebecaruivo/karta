@@ -1,0 +1,44 @@
+/* Visual das cartas da v2, copiado do protótipo "Cartas por conexão" (docs/arquitetura).
+   Tudo com prefixo "v2-" para não interferir na v1. */
+.v2 { --v2-tinta: #0F1B2D; --v2-suave: #475569; --v2-fundo: #F3F7FF; --v2-borda: #D3DEF3; --v2-azul: #1E4FD8; --v2-azul-claro: #DCE7FF; --v2-azul-texto: #1E3A8A; }
+.v2-cjk { font-family: 'Noto Sans SC', 'Noto Sans JP', sans-serif; }
+.v2-h { font-family: Outfit, sans-serif; }
+.v2-sub { color: var(--v2-suave); }
+
+/* Carta: esqueleto fixo (seção 6.2): instrução no topo, conteúdo ao centro, ação embaixo */
+.v2-cena { width: min(520px, 100%); margin: 0 auto; perspective: 1400px; }
+.v2-giro { display: grid; transition: transform .6s cubic-bezier(.2,.7,.2,1); transform-style: preserve-3d; cursor: pointer; }
+.v2-cena.virada .v2-giro { transform: rotateY(180deg); }
+.v2-giro:focus-visible { outline: 3px solid var(--v2-azul); outline-offset: 6px; border-radius: 24px; }
+.v2-face { grid-area: 1 / 1; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+.v2-face.verso { transform: rotateY(180deg); }
+@media (prefers-reduced-motion: reduce) { .v2-giro { transition: none; } }
+.v2-mc { min-height: 360px; padding: 20px 24px; border-radius: 24px; background: var(--v2-fundo); border: 1px solid var(--v2-borda); box-shadow: 0 8px 0 -2px #E1EAF9, 0 16px 0 -4px #EEF3FC; display: flex; flex-direction: column; align-items: center; justify-content: space-between; text-align: center; color: var(--v2-tinta); font-family: Figtree, sans-serif; }
+.v2-chip { display: inline-block; font-size: 14px; font-weight: 500; color: var(--v2-azul-texto); background: var(--v2-azul-claro); border-radius: 999px; padding: 4px 12px; }
+.v2-mb { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.v2-bt { min-height: 44px; display: flex; align-items: center; justify-content: center; position: relative; }
+.v2-pb { width: 80px; height: 80px; border: 0; border-radius: 22px; background: var(--v2-azul); color: #fff; display: grid; place-items: center; cursor: pointer; }
+.v2-pb.tocando { box-shadow: 0 0 0 6px var(--v2-azul-claro); }
+.v2-sg { display: flex; gap: 4px; padding: 4px; background: var(--v2-azul-claro); border-radius: 12px; }
+.v2-sg button { padding: 6px 14px; border: 0; border-radius: 8px; font: 600 14px Figtree, sans-serif; color: var(--v2-azul-texto); background: transparent; cursor: pointer; }
+.v2-sg button.on { background: #fff; }
+.v2-tb { display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px; border: 0; border-radius: 10px; background: var(--v2-azul-claro); color: var(--v2-azul-texto); font: 600 15px Figtree, sans-serif; cursor: pointer; }
+.v2-bl { display: inline-block; width: 64px; border-bottom: 3px solid var(--v2-azul); margin: 0 4px; }
+.v2 mark { background: none; color: var(--v2-azul); font-weight: 700; box-shadow: inset 0 -4px #B5C9F7; }
+
+/* Tooltip: no computador abre ao passar o mouse; no celular, com toque (classe .aberto);
+   pelo teclado, ao focar o botão. */
+.v2-tw { position: relative; }
+.v2-tp { width: 36px; height: 36px; border: 0; border-radius: 10px; background: var(--v2-azul-claro); color: var(--v2-azul-texto); display: grid; place-items: center; cursor: pointer; }
+.v2-tt { position: absolute; top: 50%; left: calc(50% + 28px); transform: translateY(-50%); background: var(--v2-tinta); color: #fff; padding: 6px 12px; border-radius: 6px; font: 500 15px Figtree, sans-serif; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity .15s; z-index: 2; }
+.v2-tw.aberto .v2-tt, .v2-tw:focus-within .v2-tt { opacity: 1; }
+@media (hover: hover) { .v2-tw:hover .v2-tt { opacity: 1; } }
+
+/* Telas da v2 */
+.v2-botoes { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 28px; }
+.v2-resp { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 120px; }
+.v2-resp small { font-size: 12px; opacity: .7; font-weight: 500; }
+.v2-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 28px; }
+.v2-grade .v2-mc { min-height: 280px; }
+.v2-rotulo-ponte { font: 600 16px Outfit, sans-serif; margin-bottom: 10px; display: flex; gap: 8px; align-items: center; }
+.v2-tag { font-size: 12px; font-weight: 500; color: var(--v2-azul-texto); background: var(--v2-azul-claro); padding: 3px 8px; border-radius: 8px; }
