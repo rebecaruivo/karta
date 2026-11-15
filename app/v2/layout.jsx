@@ -7,7 +7,7 @@ export default function LayoutV2({ children }) {
   return (
     <div className="v2">
       <p className="mu" style={{ margin: "0 0 20px", fontSize: 13 }}>
-        <strong>Versão 2 em desenvolvimento</strong> · cartas por conexão · <Link href="/v2" style={{ textDecoration: "underline" }}>baralhos da v2</Link> · <Link href="/" style={{ textDecoration: "underline" }}>voltar para a v1</Link>
+        <strong>Versão 2 (beta)</strong> · cartas por conexão · <Link href="/v2" style={{ textDecoration: "underline" }}>baralhos da v2</Link> · <Link href="/" style={{ textDecoration: "underline" }}>voltar para a v1</Link>
       </p>
       {children}
     </div>

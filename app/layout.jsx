@@ -20,7 +20,7 @@ export default function RootLayout({ children }) {
       <body>
         <header className="topo">
           <Link href="/" className="marca d">Karta</Link>
-          <nav style={{ display: "flex", gap: 20 }}><Link href="/">Biblioteca</Link><Link href="/configuracoes">Configurações</Link></nav>
+          <nav style={{ display: "flex", gap: 20, alignItems: "center" }}><Link href="/">Biblioteca</Link><Link href="/v2">Cartas por conexão <span className="tg" style={{ fontSize: 10, padding: "2px 7px" }}>beta</span></Link><Link href="/configuracoes">Configurações</Link></nav>
         </header>
         <main className="conteudo">{children}</main>
       </body>
