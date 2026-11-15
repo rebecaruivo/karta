@@ -11,6 +11,8 @@
     "postinstall": "node scripts/copiar-sqljs.mjs",
     "testar:apkg": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/testar-apkg.mjs",
     "testar:v2": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/testar-v2.mjs",
+    "baixar:hsk": "node scripts/baixar-hsk.mjs",
+    "prototipo:modulo1": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/prototipo-modulo1.mjs",
     "prototipo:modulo2": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/prototipo-modulo2.mjs",
     "testar:srs": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/testar-srs.mjs"
   },

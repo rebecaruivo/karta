@@ -1,6 +1,8 @@
 // Testes automáticos das partes da v2 que não dependem da IA.
 // Uso: npm run testar:v2
-import { lerPalavras } from "../lib/v2/portaEntrada.js";
+import { lerPalavras, validarTema } from "../lib/v2/portaEntrada.js";
+import { limparLista, montarPedido as pedidoM1, conferirNoHSK } from "../lib/v2/modulo1.js";
+import { montarPedido as pedidoM2, enriquecer } from "../lib/v2/modulo2.js";
 import { montarCartas, CATALOGO_PONTES } from "../lib/v2/pontes.js";
 import { montarFila } from "../lib/v2/sessao.js";
 import { criarRepositorio } from "../lib/v2/banco.js";
@@ -49,6 +51,26 @@ conferir(pe.facets[3].parent_facet_id === pe.facets[0].id && pe.facets[4].parent
 conferir(pe.facets.filter((f) => f.facet_type === "AUDIO").every((f) => f.status === "pending"), "áudios nascem pending");
 conferir(!("audio_slow_url" in pe.facets[3].metadata), "sem audio_slow_url: a versão lenta é tocada no navegador");
 
+
+console.log("\n— Módulo 1: geração de palavras a partir de um tema");
+conferir(Boolean(validarTema("  ").erro) && Boolean(validarTema("x".repeat(81)).erro) && validarTema(" frutas ").tema === "frutas", "porta de entrada valida o tema: vazio e longo demais são recusados");
+const lista = limparLista([{ lemma: "苹果", gloss: "maçã" }, { lemma: "苹果", gloss: "maçã" }, { lemma: "香蕉", gloss: "banana" }, { lemma: "apple", gloss: "maçã" }, { lemma: "西瓜", gloss: "melancia" }, { lemma: "葡萄", gloss: "uva" }], { count: 2, existing_words: ["香蕉"] });
+conferir(lista.palavras.map((p) => p.lemma).join() === "苹果,西瓜", "remove repetidas, já existentes no baralho e inválidas; respeita a quantidade");
+conferir(lista.descartadas.some((d) => d.motivo === "já existe no baralho") && lista.descartadas.some((d) => d.motivo === "repetida") && lista.descartadas.some((d) => d.motivo === "inválida"), "registra o motivo de cada descarte");
+conferir(pedidoM1({ theme: "frutas", level: "HSK 1", count: 5, existing_words: ["香蕉"] }).includes("não repita): 香蕉"), "\"gerar mais\": as palavras que o baralho já tem vão no pedido");
+conferir(pedidoM2([{ id: "w1", gloss: "água", lemma: "水" }], "HSK 1").includes("(em mandarim: 水)"), "Módulo 2 recebe a palavra em mandarim escolhida pelo Módulo 1");
+const trocou = montarPalavraEnriquecida({ id: "w1", gloss: "água", lemma: "水" }, { ...boa, lemma: "开水" }, { deck_id: "d1", language: "zh", origin: "ai" });
+conferir(trocou.problemas.some((p) => p.includes("trocou a palavra escolhida")), "se o Módulo 2 trocar a palavra escolhida, a checagem acusa");
+const ia = { models: { generateContent: async () => ({ text: JSON.stringify({ words: [{ id: "w1", ...boa }, { id: "w2", ...boa, lemma: "茶", target_in_sentence: "茶", sentence: "我喝茶。" }] }), usageMetadata: {} }) } };
+const mista = await enriquecer(ia, "simulado", { origin: "theme", target_language: "zh", level: "HSK 1", words: [{ id: "w1", gloss: "água", lemma: "水", origin: "ai" }, { id: "w2", gloss: "chá", origin: "user" }] });
+conferir(mista.resultados[0].concept.origin === "ai" && mista.resultados[1].concept.origin === "user", "baralho com origem mista: palavra da IA fica \"ai\", palavra acrescentada fica \"user\"");
+
+const hsk = { 西瓜: 2, 苹果: 3, 葡萄: 5 };
+const conferidas = conferirNoHSK([{ lemma: "析璉", gloss: "melancia" }, { lemma: "苹果", gloss: "maçã" }, { lemma: "葡萄", gloss: "uva" }], hsk, "HSK 3");
+conferir(conferidas[0].lemma === null && conferidas[0].lemma_descartado === "析璉", "caractere errado (fora da lista do HSK) perde o lemma e será retraduzido");
+conferir(!conferidas[1].acima_do_nivel && conferidas[2].acima_do_nivel && conferidas[2].hsk === 5, "palavra acima do nível pedido é marcada, não removida");
+conferir(conferirNoHSK([{ lemma: "析璉", gloss: "x" }], null, "HSK 1")[0].lemma === "析璉", "sem a lista baixada, a checagem fica desligada");
+conferir(pedidoM1({ theme: "frutas", level: "HSK 1", count: 5 }) && (await import("../lib/v2/modulo1.js")).INSTRUCAO_SISTEMA.includes("devolva MENOS"), "prompt manda devolver menos em vez de sair do tema");
 
 console.log("\n— Módulo 3: montagem de pontes");
 const base = (gloss, ajuste = {}) => montarPalavraEnriquecida({ id: gloss, gloss, sense_hint: null }, { ...boa, ...ajuste }, { deck_id: "d1", language: "zh", origin: "user" });

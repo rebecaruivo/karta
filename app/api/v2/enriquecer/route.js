@@ -5,6 +5,7 @@ import { GoogleGenAI } from "@google/genai";
 import { enriquecer, VERSAO_PROMPT } from "@/lib/v2/modulo2.js";
 import { LIMITES } from "@/lib/v2/portaEntrada.js";
 import { escolherChave, respostaSemChave } from "@/lib/chaveServidor";
+import dicionario from "@/lib/v2/dados/hsk.js";
 
 export const maxDuration = 60;
 
@@ -24,6 +25,13 @@ export async function POST(request) {
   }
   if (wordList.target_language !== "zh") {
     return Response.json({ erro: "Nesta versão, só o mandarim está disponível (perfil de referência)." }, { status: 400 });
+  }
+
+  // O lemma vem do navegador: só aceita até 8 caracteres chineses e, se a lista do HSK existir, só palavra da lista.
+  // Fora disso, descarta e o Módulo 2 traduz de novo a partir do português.
+  for (const p of palavras) {
+    if (p.lemma && (!/^[\u3400-\u9fff]{1,8}$/u.test(p.lemma) || (dicionario && dicionario[p.lemma] === undefined))) p.lemma = null;
+    if (p.origin !== "ai" && p.origin !== "user") delete p.origin;
   }
 
   const ai = new GoogleGenAI({ apiKey: chave });
