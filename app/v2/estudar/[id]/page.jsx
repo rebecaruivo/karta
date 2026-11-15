@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { obterRepo } from "@/lib/v2/cliente";
-import { montarFila } from "@/lib/v2/sessao";
-import { responder, previsao, formatarIntervalo, RESPOSTAS } from "@/lib/v2/srs";
+import { montarFila, espacarPalavras } from "@/lib/v2/sessao";
+import { responder, RESPOSTAS } from "@/lib/v2/srs";
 import Carta from "@/components/v2/Carta";
 
 const VOLTA_NA_SESSAO_MS = 20 * 60 * 1000; // carta que volta em até 20 min reaparece nesta sessão
@@ -15,7 +15,9 @@ export default function EstudarV2() {
   const [dados, setDados] = useState(undefined);
   const [fila, setFila] = useState([]);
   const [total, setTotal] = useState(0);
-  const [feitas, setFeitas] = useState(0);
+  // Progresso = cartas já vistas nesta sessão. Contar só as que saem da sessão deixava a barra
+  // parada: carta nova volta em 10 min (passo de fixação do FSRS) e reaparece na mesma sessão.
+  const [vistas, setVistas] = useState(() => new Set());
   const [virada, setVirada] = useState(false);
 
   useEffect(() => {
@@ -32,8 +34,9 @@ export default function EstudarV2() {
     const nova = responder(carta, resposta);
     await (await obterRepo()).atualizarCarta(nova);
     const voltaLogo = new Date(nova.due_at) - new Date() <= VOLTA_NA_SESSAO_MS;
-    setFila((f) => (voltaLogo ? [...f.slice(1), nova] : f.slice(1)));
-    if (!voltaLogo) setFeitas((n) => n + 1);
+    // A carta respondida fica como "cabeça" só para a próxima não ser da mesma palavra
+    setFila((f) => espacarPalavras([carta, ...f.slice(1), ...(voltaLogo ? [nova] : [])]).slice(1));
+    setVistas((v) => new Set(v).add(carta.id));
     setVirada(false);
   }
 
@@ -66,8 +69,8 @@ export default function EstudarV2() {
 
   const carta = fila[0];
   const palavra = dados.palavras.find((p) => p.concept.id === carta.concept_id);
-  const prev = previsao(carta);
-  const pct = total ? Math.round((feitas / total) * 100) : 0;
+  const pct = total ? Math.round((vistas.size / total) * 100) : 0;
+  const revendo = fila.filter((c) => vistas.has(c.id)).length;
 
   return (
     <div className="estudo">
@@ -75,23 +78,25 @@ export default function EstudarV2() {
         <Link href={voltar} className="mu">← Sair</Link>
         <span className="mu">{dados.deck.name}</span>
         <div className="bar" style={{ flex: 1, marginTop: 0 }}><div style={{ width: `${pct}%` }} /></div>
-        <span className="mu">{feitas} / {total}</span>
+        <span className="mu" title="Cartas vistas nesta sessão">{vistas.size} / {total}{revendo > 0 && ` · ${revendo} para rever`}</span>
       </div>
 
       <Carta key={carta.id + carta.reps} ponte={carta.bridge_template_id} palavra={palavra} virada={virada} aoVirar={() => setVirada((v) => !v)}
         comAudio={(dados.deck.facetas_opcionais ?? ["AUDIO"]).includes("AUDIO")} />
 
-      <div className="v2-botoes" style={{ minHeight: 90 }}>
+      {/* Mesmo padrão da v1: botões simples e os atalhos numa linha discreta embaixo */}
+      <div className="v2-botoes">
         {!virada ? (
-          <button className="btn" onClick={() => setVirada(true)}>Mostrar resposta <span className="mu" style={{ color: "#bbb" }}>(espaço)</span></button>
+          <button className="btn" onClick={() => setVirada(true)}>Mostrar resposta</button>
         ) : (
-          ["nao", "acho", "decorei"].map((r, i) => (
-            <button key={r} className={`${r === "decorei" ? "btn" : "bo"} v2-resp`} onClick={() => avaliar(r)}>
-              {RESPOSTAS[r].rotulo}<small>{formatarIntervalo(prev[r])} · {i + 1}</small>
-            </button>
-          ))
+          <>
+            <button className="bo" onClick={() => avaliar("nao")}>{RESPOSTAS.nao.rotulo}</button>
+            <button className="bo" style={{ background: "#DCE8FD" }} onClick={() => avaliar("acho")}>{RESPOSTAS.acho.rotulo}</button>
+            <button className="btn" onClick={() => avaliar("decorei")}>{RESPOSTAS.decorei.rotulo}</button>
+          </>
         )}
       </div>
+      <p className="mu v2-atalhos">{virada ? "Atalhos: 1, 2, 3 · espaço vira a carta" : "Atalho: espaço vira a carta"}</p>
     </div>
   );
 }

@@ -42,3 +42,37 @@
 .v2-grade .v2-mc { min-height: 280px; }
 .v2-rotulo-ponte { font: 600 16px Outfit, sans-serif; margin-bottom: 10px; display: flex; gap: 8px; align-items: center; }
 .v2-tag { font-size: 12px; font-weight: 500; color: var(--v2-azul-texto); background: var(--v2-azul-claro); padding: 3px 8px; border-radius: 8px; }
+
+/* Ações secundárias como texto (menos pills na tela) */
+.v2-link { background: none; border: 0; padding: 0; font: 600 14px Figtree, sans-serif; color: var(--tinta); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.v2-link:disabled { opacity: .5; cursor: default; }
+.v2-link.perigo { color: #B42318; }
+.v2-acoes-palavra { display: grid; gap: 6px; justify-items: start; }
+.v2-atalhos { text-align: center; font-size: 12px; margin-top: 12px; }
+
+/* Menu "Editar" do baralho */
+.v2-menu-ancora { position: relative; }
+.v2-menu { position: absolute; right: 0; top: calc(100% + 8px); z-index: 5; min-width: 260px; display: grid; gap: 2px; padding: 6px; background: #fff; border: 1px solid var(--linha); border-radius: 16px; box-shadow: 0 12px 32px rgba(15, 27, 45, .12); }
+.v2-menu button { display: grid; gap: 2px; text-align: left; padding: 10px 12px; border: 0; border-radius: 10px; background: transparent; color: var(--tinta); font: 15px Figtree, sans-serif; cursor: pointer; }
+.v2-menu button:hover, .v2-menu button:focus-visible { background: var(--fundo-carta); }
+.v2-menu button:disabled { opacity: .5; cursor: default; }
+.v2-menu .mu { font-size: 13px; }
+
+/* Seleção em massa: checkbox à direita de cada palavra e barra de ações */
+.v2-col-sel { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.v2-check { display: flex; align-items: center; gap: 8px; margin-left: auto; text-transform: none; letter-spacing: 0; cursor: pointer; }
+.v2-check-caixa, .v2-check input { width: 18px; height: 18px; accent-color: var(--tinta); cursor: pointer; }
+.lr.v2-marcada { background: var(--fundo-carta); }
+.v2-barra-selecao { position: sticky; bottom: 16px; z-index: 4; width: fit-content; margin: 20px auto 0; display: flex; align-items: center; gap: 20px; padding: 12px 24px; border-radius: 999px; background: var(--tinta); color: #fff; font: 600 14px Figtree, sans-serif; box-shadow: 0 8px 24px rgba(15, 27, 45, .25); }
+.v2-barra-selecao .v2-link { color: #fff; }
+/* coluna da direita mais larga (link + checkbox); no celular vale o layout da v1 */
+@media (min-width: 641px) { .v2 .lr { grid-template-columns: 120px 1fr 1.2fr 170px; } }
+.v2-menu button.v2-perigo strong { color: #B42318; }
+
+/* Avisos de erro da v2: só o ícone, sem a caixa pontilhada da v1 */
+.v2 .erro { border: 0; border-radius: 0; padding: 0; font-weight: 600; }
+.v2 .erro::before { content: "⚠ "; }
+
+/* Campos e botões compactos dentro dos painéis de edição */
+.v2-fi { font-size: 15px; padding: 9px 14px; border-radius: 12px; }
+.v2-bo-p { padding: 9px 18px; font-size: 14px; white-space: nowrap; flex: none; }
