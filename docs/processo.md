@@ -226,6 +226,25 @@ Regras definidas para quando a imagem entrar: a imagem não tem plano B como a v
 
 ---
 
+## v2 · Módulo 1: baralho a partir de um tema (15/11)
+O modo A do documento de arquitetura (seção 4): a pessoa digita um tema ("frutas", "no restaurante"), escolhe quantidade e nível, e o **Módulo 1** sugere as palavras. Nenhuma carta é criada antes de uma **tela de revisão**, onde dá para editar, remover, acrescentar ou pedir mais palavras à IA. Depois disso, o caminho é o mesmo do modo B (Módulos 2 e 3).
+
+Decisões de encaixe entre os módulos:
+- **O Módulo 1 já devolve a palavra em mandarim** (`lemma`) junto com a tradução (`gloss`). O Módulo 2 passou a **respeitar essa palavra** (prompt v4) em vez de traduzir de novo, e a checagem acusa se ele trocar. Sem isso, a palavra revisada poderia mudar no meio do caminho.
+- **Editar uma palavra descarta o `lemma`**: o texto mudou, então o Módulo 2 traduz a versão nova. Palavras editadas ou acrescentadas ficam com origem `user`; as sugeridas, `ai`. Um mesmo baralho pode ter as duas.
+- **Tema vago:** a resposta da IA tem campos obrigatórios dizendo se o tema serve (`theme_ok`) e, se não servir, uma sugestão (`refinement_hint`). É a mesma técnica de campos obrigatórios que melhorou o prompt v2 do Módulo 2: obrigar a IA a decidir explicitamente, em vez de torcer para ela avisar.
+- **"Pedir mais"** manda as palavras que a lista já tem (`existing_words`), para a IA não repetir. O código também remove repetidas, já existentes e inválidas (o que não for caractere chinês), porque não dá para confiar só na instrução.
+- **O `lemma` que volta do navegador não é confiável** (qualquer pessoa pode editar a requisição): a rota do Módulo 2 só aceita até 8 caracteres chineses; fora disso, descarta e traduz de novo.
+
+Testes novos cobrem a porta de entrada do tema, a limpeza da lista, o pedido do "gerar mais", o Módulo 2 recebendo a palavra escolhida e a origem mista. Para medir a qualidade das sugestões com a IA de verdade, há o `npm run prototipo:modulo1`, com dois temas bons, um amplo demais ("coisas") e um sem sentido.
+
+**O que o protótipo mostrou (e uma decisão minha que precisou de reforço):**
+- **A IA escreveu caracteres errados que parecem certos:** 析璉 no lugar de 西瓜 (melancia), 节林 no lugar de 苹果 (maçã), 栒子 no lugar de 橙子 (laranja). Todos são caracteres chineses válidos, então a checagem de "é caractere chinês?" não pegou. E, como o Módulo 2 passou a respeitar a palavra do Módulo 1, o erro seguiria até a carta. **Correção:** cada palavra é conferida na lista oficial do HSK ([complete-hsk-vocabulary](https://github.com/drkameleon/complete-hsk-vocabulary), licença MIT, cerca de 11 mil palavras). Fora da lista, o mandarim é descartado e o Módulo 2 traduz de novo a partir do português. A mesma lista marca palavras acima do nível pedido (aviso na revisão, sem remover). Lição: **validar a IA com uma fonte externa**, não só pelo formato.
+- **"Pedir mais" completou com palavras fora do tema** (水 água e 吃 comer em "frutas"), porque no HSK 1 há poucas frutas. **Correção** (prompt v2): se faltarem palavras do tema no nível, devolver menos.
+- Os temas ruins foram recusados com boas sugestões, e "no restaurante" veio certo. Cada chamada levou de 1 a 2,5 segundos.
+
+---
+
 ## Próximas etapas
 - [x] Áudio de cada carta (Gemini TTS, com a voz do navegador como plano B)
 - [x] Exportação `.apkg` para o Anki
