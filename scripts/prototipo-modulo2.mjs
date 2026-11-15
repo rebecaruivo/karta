@@ -12,6 +12,8 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { lerPalavras } from "../lib/v2/portaEntrada.js";
 import { enriquecer, VERSAO_PROMPT } from "../lib/v2/modulo2.js";
 import { fraseComLacuna } from "../lib/v2/facetas.js";
+import { montarCartas } from "../lib/v2/pontes.js";
+import { montarFilaDoDia } from "../lib/v2/sessao.js";
 
 // Lista padrão com casos difíceis de propósito
 const PADRAO = "água, arroz, comer, bonito, ônibus, obrigado, banco, manga (fruta), pegar, saudade";
@@ -43,8 +45,12 @@ for (const modelo of modelos) {
 }
 if (!saida) { console.log("Nenhum modelo respondeu. Rode npm run diagnostico."); process.exit(1); }
 
-// 3. Métricas
+// 3. Módulo 3: cartas e fila do primeiro dia
 const { resultados, chamadas } = saida;
+const { cartas, naoCriadas } = montarCartas(resultados.filter((r) => r.facets.length));
+const { fila, enterradas } = montarFilaDoDia(cartas);
+
+// 4. Métricas
 const soma = (k) => chamadas.reduce((s, c) => s + (c[k] || 0), 0);
 const comProblema = resultados.filter((r) => r.problemas.length);
 const metricas = {
@@ -60,9 +66,13 @@ const metricas = {
   lacunasValidas: resultados.filter((r) => r.facets[2]?.metadata?.cloze_indices).length,
   ambiguas: resultados.filter((r) => r.facets[1]?.metadata?.ambiguous).length,
   acimaDoNivel: resultados.filter((r) => r.facets[0]?.metadata?.level_fit === false).length,
+  cartas: cartas.length,
+  cartasNaoCriadas: naoCriadas.length,
+  filaPrimeiroDia: fila.length,
+  irmasEnterradas: enterradas.length,
 };
 
-// 4. Relatório para revisão humana
+// 5. Relatório para revisão humana
 const linhas = resultados.map((r) => {
   const [w, m, s] = r.facets;
   const lacuna = s?.metadata?.cloze_indices ? fraseComLacuna(s.value, s.metadata.cloze_indices) : "—";
@@ -83,6 +93,8 @@ const md = `# Protótipo do Módulo 2 · mandarim · ${agora.toLocaleString("pt-
 | Lacunas válidas | ${metricas.lacunasValidas} de ${metricas.palavras} |
 | Marcadas como ambíguas | ${metricas.ambiguas} |
 | Acima do nível | ${metricas.acimaDoNivel} |
+| Cartas geradas (Módulo 3) | ${metricas.cartas} (${metricas.cartasNaoCriadas} não criadas) |
+| Fila do primeiro dia | ${metricas.filaPrimeiroDia} cartas (${metricas.irmasEnterradas} irmãs para os próximos dias) |
 
 ## Revisão
 
@@ -91,11 +103,11 @@ A checagem automática pega erros de formato. A coluna **Revisão humana** é pa
 | Português | Escrita | Pinyin | Classe | Significado | Frase | Lacuna | Checagem automática | Alertas da IA | Revisão humana |
 |---|---|---|---|---|---|---|---|---|---|
 ${linhas.join("\n")}
-`;
+${naoCriadas.length ? `\n## Cartas não criadas\n\n| Palavra | Ponte | Motivo |\n|---|---|---|\n${naoCriadas.map((n) => `| ${n.gloss} | ${n.ponte} | ${n.motivo} |`).join("\n")}\n` : ""}`;
 mkdirSync("prototipos", { recursive: true });
 const sufixo = `${carimbo}-${modeloUsado}`;
 writeFileSync(`prototipos/modulo2-${sufixo}.md`, md);
-writeFileSync(`prototipos/modulo2-${sufixo}.json`, JSON.stringify({ metricas, chamadas, wordList, resultados }, null, 2));
+writeFileSync(`prototipos/modulo2-${sufixo}.json`, JSON.stringify({ metricas, chamadas, wordList, resultados, cartas, naoCriadas }, null, 2));
 
 console.log("\n" + Object.entries(metricas).map(([k, v]) => `${k}: ${v}`).join("\n"));
 console.log(`\nRelatório: prototipos/modulo2-${sufixo}.md`);

@@ -161,6 +161,17 @@ Antes de chamar a IA, 24 testes automáticos ([`scripts/testar-v2.mjs`](../scrip
 
 ---
 
+## v2 · Módulo 3 e a regra das cartas irmãs (15/11)
+O **Módulo 3** ([`lib/v2/pontes.js`](../lib/v2/pontes.js)) transforma facetas em cartas. O catálogo de 7 pontes da seção 6.1 virou dados: cada ponte guarda os tipos de faceta da frente e do verso (como na modelagem do CauanGS) e um `layout` com o que a carta exibe. Uma ponte só vira carta se as facetas que ela mostra estiverem prontas; o áudio é a exceção, porque, pendente, a carta usa a voz do navegador. Quando uma carta não é criada, o motivo fica registrado (ex.: "frase sem lacuna válida").
+
+**O problema das irmãs.** Sete cartas da mesma palavra no mesmo dia entregam a resposta umas das outras: depois de ver 水 → "água", a carta "áudio → 水" vira trivial. A fila do dia ([`lib/v2/sessao.js`](../lib/v2/sessao.js)) aplica a regra do Anki: **no máximo uma carta por palavra por dia**; as irmãs ficam para os dias seguintes. Isso não contradiz o documento ("todas as pontes valem ao mesmo tempo"): as 7 cartas existem desde o início, só a apresentação é espaçada. Proposta de ordem, da mais fácil para a mais difícil: reconhecer a palavra escrita, depois o áudio, depois a frase e, por último, produzir a frase.
+
+**Com o resultado real do protótipo:** 10 palavras → 70 cartas, nenhuma deixou de ser criada; no primeiro dia, 10 cartas (uma por palavra, começando por Palavra → Significado) e 60 irmãs para os próximos dias.
+
+Testes: 37 no total (`npm run testar:v2`). Um deles falhou na primeira execução, e o erro era do teste: ele esperava 3 pontes de áudio, mas o catálogo tem 4. O teste passou a contar pelo próprio catálogo, em vez de um número escrito à mão.
+
+---
+
 ## Próximas etapas
 - [x] Áudio de cada carta (Gemini TTS, com a voz do navegador como plano B)
 - [x] Exportação `.apkg` para o Anki
