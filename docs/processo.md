@@ -200,6 +200,32 @@ Duas coisas apareceram no caminho:
 
 ---
 
+## v2 · Primeiras telas e uma decisão revista (15/11)
+As cartas ganharam interface (`/v2`): criação por lista de palavras com prévia em chips antes de gastar IA, tela do baralho com os alertas da IA e uma prévia das cartas de cada palavra, e a sessão de estudo com FSRS. O componente da carta segue o protótipo; o tooltip abre com o mouse no computador, com toque no celular e com o teclado.
+
+**Decisão revista depois de ver as cartas na tela:** a regra das irmãs (uma carta por palavra por dia) e o limite diário saíram. Todas as cartas ficam disponíveis desde a criação do baralho, e a fila de estudo vem **embaralhada**, sem limite. A troca tem um custo conhecido: às vezes duas cartas da mesma palavra caem perto e a segunda fica mais fácil. Se isso pesar no uso, a alternativa leve é impedir só que duas cartas da mesma palavra apareçam em sequência, sem desfazer o embaralhamento.
+
+---
+
+## v2 · Áudio opcional e modo de áudio (15/11)
+Duas decisões separadas, porque respondem a perguntas diferentes:
+
+**1. No baralho: "Incluir exercícios de áudio"** (a pessoa quer ou não treinar escuta). Desligado, cada palavra gera 3 cartas em vez de 7. O catálogo de pontes passou a distinguir áudio **essencial** (o áudio é a pergunta ou a resposta) de áudio **auxiliar** (o botão "Ouvir frase" no verso): sem áudio, as cartas com áudio auxiliar continuam existindo, só sem o botão. A opção fica em `decks.facetas_opcionais`, pensada para receber `IMAGE` no futuro.
+
+**2. Em Configurações: de onde vem a voz** (vale para v1 e v2):
+
+| Modo | Gerar gravações | Ao tocar |
+|---|---|---|
+| Cota e, se esgotar, navegador (padrão) | Sim | Gravação do Gemini; sem ela, voz do navegador |
+| Só a cota | Sim | Só gravação; sem ela, a carta avisa que falta gerar |
+| Só o navegador | Não (nunca gasta cota) | Sempre a voz do aparelho |
+
+A v2 passou a gerar gravações reaproveitando a rota de voz da v1, já com a ordem aprendida no teste real: primeiro as palavras, depois as frases.
+
+Regras definidas para quando a imagem entrar: a imagem não tem plano B como a voz do navegador (sem imagem, a carta de imagem não é criada); a faceta só é criada se a opção estiver ligada, porque buscar ou gerar imagem custa; palavras abstratas podem não ter carta de imagem.
+
+---
+
 ## Próximas etapas
 - [x] Áudio de cada carta (Gemini TTS, com a voz do navegador como plano B)
 - [x] Exportação `.apkg` para o Anki
