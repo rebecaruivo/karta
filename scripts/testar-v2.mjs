@@ -1,6 +1,8 @@
 // Testes automáticos das partes da v2 que não dependem da IA.
 // Uso: npm run testar:v2
 import { lerPalavras } from "../lib/v2/portaEntrada.js";
+import { montarCartas, CATALOGO_PONTES } from "../lib/v2/pontes.js";
+import { montarFilaDoDia } from "../lib/v2/sessao.js";
 import { calcularLacuna, fraseComLacuna, validarMandarim, montarPalavraEnriquecida, capitalizarPinyin, alertas } from "../lib/v2/facetas.js";
 
 let falhas = 0;
@@ -43,6 +45,41 @@ conferir(igual(pe.facets[2].metadata.cloze_indices, [2, 3]), "SENTENCE traz cloz
 conferir(pe.facets[3].parent_facet_id === pe.facets[0].id && pe.facets[4].parent_facet_id === pe.facets[2].id, "áudios apontam para a escrita e para a frase (parent_facet_id)");
 conferir(pe.facets.filter((f) => f.facet_type === "AUDIO").every((f) => f.status === "pending"), "áudios nascem pending");
 conferir(!("audio_slow_url" in pe.facets[3].metadata), "sem audio_slow_url: a versão lenta é tocada no navegador");
+
+
+console.log("\n— Módulo 3: montagem de pontes");
+const base = (gloss, ajuste = {}) => montarPalavraEnriquecida({ id: gloss, gloss, sense_hint: null }, { ...boa, ...ajuste }, { deck_id: "d1", language: "zh", origin: "user" });
+const agua = base("água");
+const { cartas: c1, naoCriadas: n1 } = montarCartas([agua]);
+conferir(c1.length === 7 && n1.length === 0, "palavra completa gera 7 cartas (uma por ponte do catálogo)");
+conferir(c1.every((c) => c.state === "NEW" && c.stability === null && !("user_id" in c)), "cartas nascem NEW, sem estado de memória e sem user_id");
+const pontesDeAudio = CATALOGO_PONTES.filter((p) => [...p.front_facet_types, ...p.back_facet_types].includes("AUDIO")).map((p) => p.id);
+conferir(pontesDeAudio.length === 4 && pontesDeAudio.every((id) => c1.some((c) => c.bridge_template_id === id)), "áudio pendente não impede as 4 pontes de áudio (a carta usa a voz do navegador)");
+const semLacuna = base("chá", { target_in_sentence: "咖啡" });
+const { cartas: c2, naoCriadas: n2 } = montarCartas([semLacuna]);
+conferir(c2.length === 6 && n2[0]?.ponte === "CLOZE_SENTENCE_TO_WORD" && n2[0].motivo === "frase sem lacuna válida", "sem lacuna válida: 6 cartas, e o motivo da que faltou fica registrado");
+const semTraducao = base("sol", { sentence_translation: "" });
+conferir(montarCartas([semTraducao]).naoCriadas.some((n) => n.ponte === "MEANING_TO_SENTENCE" && n.motivo === "frase sem tradução"), "sem tradução da frase: a ponte Significado → Frase não é criada");
+const falhou = base("céu"); falhou.facets[0].status = "failed";
+conferir(montarCartas([falhou]).cartas.every((c) => !["AUDIO_TO_WORD", "WORD_TO_AUDIO", "WORD_TO_MEANING", "AUDIO_TO_MEANING", "CLOZE_SENTENCE_TO_WORD"].includes(c.bridge_template_id)), "escrita com falha: nenhuma ponte que mostra a escrita é criada");
+const soAtivas = CATALOGO_PONTES.map((p) => ({ ...p, active: p.id === "WORD_TO_MEANING" }));
+conferir(montarCartas([agua], { catalogo: soAtivas }).cartas.length === 1, "ponte desativada não gera carta");
+conferir(montarCartas([agua], { existentes: c1 }).cartas.length === 0, "rodar de novo não duplica (conceito + ponte é único)");
+
+console.log("\n— Fila do dia e cartas irmãs");
+const agora = new Date("2026-11-15T15:00:00");
+const tres = ["água", "chá", "sol"].map((g) => base(g + "!"));
+const todas = montarCartas(tres, { agora }).cartas;
+const { fila: f1, enterradas: e1 } = montarFilaDoDia(todas, { agora });
+conferir(todas.length === 21 && f1.length === 3 && e1.length === 18, "3 palavras × 7 cartas: só 3 aparecem hoje (uma por palavra); 18 irmãs ficam para outro dia");
+conferir(f1.every((c) => c.bridge_template_id === "WORD_TO_MEANING"), "a primeira carta de cada palavra é a mais fácil (Palavra → Significado)");
+conferir(montarFilaDoDia(todas, { agora, limiteNovas: 2 }).fila.length === 2, "respeita o limite de cartas novas por dia");
+const estudada = todas.map((c, i) => (i === 0 ? { ...c, state: "REVIEW", last_review_at: "2026-11-15T09:00:00", due_at: "2026-11-15T10:00:00" } : c));
+const { fila: f2 } = montarFilaDoDia(estudada, { agora });
+conferir(!f2.some((c) => c.concept_id === todas[0].concept_id), "palavra que já teve carta estudada hoje não volta hoje");
+const revisao = todas.map((c, i) => (i === 3 ? { ...c, state: "REVIEW", last_review_at: "2026-11-10T09:00:00", due_at: "2026-11-14T10:00:00" } : c));
+const { fila: f3 } = montarFilaDoDia(revisao, { agora });
+conferir(f3[0].id === todas[3].id, "revisão atrasada vem antes das cartas novas");
 
 console.log(falhas ? `\n${falhas} teste(s) falharam.` : "\nTodos os testes passaram.");
 process.exit(falhas ? 1 : 0);
