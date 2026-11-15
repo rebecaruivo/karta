@@ -13,7 +13,7 @@ import { lerPalavras } from "../lib/v2/portaEntrada.js";
 import { enriquecer, VERSAO_PROMPT } from "../lib/v2/modulo2.js";
 import { fraseComLacuna } from "../lib/v2/facetas.js";
 import { montarCartas } from "../lib/v2/pontes.js";
-import { montarFilaDoDia } from "../lib/v2/sessao.js";
+import { montarFila } from "../lib/v2/sessao.js";
 
 // Lista padrão com casos difíceis de propósito
 const PADRAO = "água, arroz, comer, bonito, ônibus, obrigado, banco, manga (fruta), pegar, saudade";
@@ -45,10 +45,10 @@ for (const modelo of modelos) {
 }
 if (!saida) { console.log("Nenhum modelo respondeu. Rode npm run diagnostico."); process.exit(1); }
 
-// 3. Módulo 3: cartas e fila do primeiro dia
+// 3. Módulo 3: cartas e fila de estudo
 const { resultados, chamadas } = saida;
 const { cartas, naoCriadas } = montarCartas(resultados.filter((r) => r.facets.length));
-const { fila, enterradas } = montarFilaDoDia(cartas);
+const fila = montarFila(cartas);
 
 // 4. Métricas
 const soma = (k) => chamadas.reduce((s, c) => s + (c[k] || 0), 0);
@@ -68,8 +68,7 @@ const metricas = {
   acimaDoNivel: resultados.filter((r) => r.facets[0]?.metadata?.level_fit === false).length,
   cartas: cartas.length,
   cartasNaoCriadas: naoCriadas.length,
-  filaPrimeiroDia: fila.length,
-  irmasEnterradas: enterradas.length,
+  cartasParaEstudar: fila.length,
 };
 
 // 5. Relatório para revisão humana
@@ -94,7 +93,7 @@ const md = `# Protótipo do Módulo 2 · mandarim · ${agora.toLocaleString("pt-
 | Marcadas como ambíguas | ${metricas.ambiguas} |
 | Acima do nível | ${metricas.acimaDoNivel} |
 | Cartas geradas (Módulo 3) | ${metricas.cartas} (${metricas.cartasNaoCriadas} não criadas) |
-| Fila do primeiro dia | ${metricas.filaPrimeiroDia} cartas (${metricas.irmasEnterradas} irmãs para os próximos dias) |
+| Disponíveis para estudar | ${metricas.cartasParaEstudar} cartas |
 
 ## Revisão
 
