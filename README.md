@@ -2,7 +2,11 @@
 
 Baralhos de flashcards de idiomas gerados por IA. Você escolhe o idioma, o nível e o tema. O Gemini monta as cartas com pronúncia, tradução e uma frase de exemplo no nível certo, e o app agenda as revisões por repetição espaçada.
 
-> **Status:** em desenvolvimento. Geração com IA, biblioteca, modo estudo, áudio e exportação para o Anki funcionando. Próxima etapa: publicar online. Acompanhe pelo [diário de construção](docs/processo.md).
+**[Abrir o Karta →](https://karta-nine-beta.vercel.app)** · funciona no navegador, sem instalar nada · [diário de construção](docs/processo.md)
+
+> **Status:** publicado. A v1 (geração com IA, modo estudo, áudio e exportação para o Anki) está completa. A **v2, cartas por conexão**, está em beta no mesmo site, no menu "Cartas por conexão".
+
+![Criando um baralho por tema na v2](docs/screenshots/v2-tema.gif)
 
 | Baralho gerado pelo Gemini | Modo estudo |
 |---|---|
@@ -20,7 +24,22 @@ O código original do Gabriel está preservado em [`v1-python/`](v1-python), com
 | **Gabriel Pinto** | Pipeline original em Python ([`v1-python/`](v1-python)), que deu origem ao projeto; coautor da [arquitetura modular da v2](docs/arquitetura/) |
 | **CauanGS** | [Modelagem de dados por facetas e pontes](docs/modelagem/), base do modelo de dados da v2 |
 
-A v2 (cartas por conexão) está em design: veja [`docs/arquitetura`](docs/arquitetura/).
+## v2 · Cartas por conexão (beta)
+Na v1, cada palavra vira uma carta. Na v2, cada palavra vira um conjunto de **facetas** (o caractere, o significado, uma frase, o áudio), e cada carta treina **uma conexão** entre duas delas: ver o caractere e lembrar o significado, ouvir e reconhecer, completar a lacuna de uma frase. São até 7 cartas por palavra, cada uma com o próprio agendamento.
+
+```
+Modo A: tema ─▶ Módulo 1 (IA escolhe as palavras) ─▶ você revisa ─┐
+                                                                   ├─▶ Módulo 2 (IA gera as facetas) ─▶ Módulo 3 (código monta as cartas)
+Modo B: suas palavras ─▶ porta de entrada ────────────────────────┘
+```
+
+- **A IA não decide sozinha:** no modo A, nenhuma carta é criada antes de você revisar, editar ou acrescentar palavras.
+- **A IA é conferida por fontes externas e por código:** cada palavra é checada na lista oficial do HSK (o protótipo mostrou a IA trocando 西瓜 por caracteres parecidos que existem, mas estão errados); a posição da lacuna é calculada pelo código, não pela IA.
+- **O Módulo 3 não usa IA:** as cartas saem de um catálogo de 7 conexões, sem custo nem variação.
+- **Repetição espaçada com FSRS** ([ts-fsrs](https://github.com/open-spaced-repetition/ts-fsrs)), o algoritmo que o Anki oferece desde 2023, com dados no IndexedDB do navegador.
+- **Áudio opcional por baralho**, e em Configurações a pessoa escolhe de onde vem a voz: gravações do Gemini, voz do navegador ou as duas.
+
+A arquitetura foi desenhada com Gabriel Pinto ([`docs/arquitetura`](docs/arquitetura/)), sobre a modelagem de dados de CauanGS ([`docs/modelagem`](docs/modelagem/)). As decisões e o que deu errado no caminho estão no [diário](docs/processo.md).
 
 ## Por que existe
 Montar um baralho bom de vocabulário dá trabalho: escolher as palavras do nível, conferir a pronúncia e achar uma frase de exemplo que não use palavras mais difíceis que a própria carta. O Karta faz essa parte em segundos e deixa a pessoa só estudar.
@@ -34,7 +53,10 @@ Montar um baralho bom de vocabulário dá trabalho: escolher as palavras do nív
 | API sem backend próprio | Rotas `/api` que viram funções serverless; cada visitante usa a própria chave, então a cota do projeto não é exposta |
 | Diagnóstico de problemas reais | [`scripts/diagnostico.mjs`](scripts/diagnostico.mjs), os 6 problemas do [primeiro teste](docs/processo.md#dia-2-1411-as-telas-e-o-primeiro-teste-real) e o [chiado causado por um certificado C2PA](docs/processo.md#dia-2-à-tarde-1411-áudio) |
 | Do design ao produto | [Mockups](docs/design) que viraram as telas reais |
-| Testes automáticos | [`scripts/testar-apkg.mjs`](scripts/testar-apkg.mjs): gera um `.apkg` de exemplo e confere 10 pontos do formato |
+| Testes automáticos | [`scripts/testar-apkg.mjs`](scripts/testar-apkg.mjs) (formato do Anki), [`scripts/testar-v2.mjs`](scripts/testar-v2.mjs) (85 verificações da v2) e [`scripts/testar-srs.mjs`](scripts/testar-srs.mjs) (repetição espaçada) |
+| Pipeline de IA em etapas, com uma pessoa no meio | v2: [Módulo 1](lib/v2/modulo1.js) → revisão → [Módulo 2](lib/v2/modulo2.js) → [Módulo 3](lib/v2/pontes.js), cada um com uma responsabilidade |
+| Validar a IA com fonte externa | [`lib/v2/dados/hsk.js`](lib/v2/dados/hsk.js), gerado da lista oficial do HSK por [`scripts/baixar-hsk.mjs`](scripts/baixar-hsk.mjs) |
+| Protótipo antes de construir | [`scripts/prototipo-modulo2.mjs`](scripts/prototipo-modulo2.mjs) mediu qualidade, custo e tempo de dois modelos antes da escolha |
 
 ## Como funciona
 
@@ -63,7 +85,9 @@ Estudo: a repetição espaçada decide quando cada carta volta
 | Modelos em variáveis de ambiente | Modelos são aposentados e ficam sobrecarregados. Trocar não exige mexer no código |
 | Erro 503 e falha de rede: nova tentativa. Erro 401 e 429: para | Só repete o que esperar resolve |
 | `localStorage` em vez de banco | MVP sem login. Limite: os dados ficam num navegador só |
-| Repetição espaçada própria | Regra simples e explicável: errou, volta na hora; acertou com segurança, o intervalo cresce 2,5× |
+| Repetição espaçada própria (v1) | Regra simples e explicável: errou, volta na hora; acertou com segurança, o intervalo cresce 2,5× |
+| FSRS (v2) | Com até 7 cartas por palavra, o agendamento precisa ser preciso; o FSRS é o algoritmo que o Anki oferece desde 2023 e tem biblioteca mantida |
+| IndexedDB (v2) | A v2 guarda facetas, cartas e gravações de áudio; o `localStorage` não comporta isso |
 
 ## Usando sem instalar
 No site publicado, abra o **baralho de exemplo** direto na biblioteca. Para criar os seus baralhos, cole a sua chave gratuita do Gemini em **Configurações**: ela fica só no seu navegador. Detalhes da decisão no [diário](docs/processo.md#preparando-para-publicar-de-quem-é-a-chave).
@@ -77,6 +101,8 @@ npm install
 cp .env.example .env.local      # coloque sua chave em GEMINI_API_KEY
 npm run diagnostico             # confere a chave e mede quais modelos estão respondendo
 npm run testar:apkg             # testa a exportação para o Anki
+npm run testar:v2               # testa a v2 (porta de entrada, módulos, cartas, banco)
+npm run testar:srs              # testa a repetição espaçada (FSRS)
 npm run dev
 ```
 
@@ -109,6 +135,9 @@ scripts/
   diagnostico-voz.mjs          Teste dos modelos de voz
   testar-apkg.mjs              Teste automático da exportação
   copiar-sqljs.mjs             Copia o SQLite para public/ no npm install
+app/v2/, components/v2/        Telas da v2 (criação, baralho, estudo, carta)
+app/api/v2/                    Funções serverless dos Módulos 1 e 2
+lib/v2/                        Porta de entrada, módulos, catálogo de pontes, FSRS e banco (IndexedDB)
 v1-python/                     Projeto original do Gabriel Pinto (Python), preservado
 docs/
   processo.md                  Diário de construção
@@ -117,8 +146,9 @@ docs/
 ```
 
 ## Próximos passos
-- Deploy no Vercel, para usar sem instalar nada
-- GIF do app funcionando
+- v2: editar palavras de um baralho já criado
+- v2: exportar para o Anki, com os 7 tipos de carta
+- v2: ligar ou desligar o áudio depois de criar o baralho
 
 ## Como foi feito
 Construído com IA de ponta a ponta, a partir do projeto de Gabriel Pinto (veja [Origem](#origem)): mockups gerados com uma ferramenta de design com IA; código escrito com o Claude como agente, a partir das minhas decisões de produto e dos meus testes; Gemini como motor do produto. Detalhes no [diário](docs/processo.md).
