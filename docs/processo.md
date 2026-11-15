@@ -183,6 +183,23 @@ O repositório cobre o que o documento pede para a tela do baralho: adicionar pa
 
 ---
 
+## v2 · Repetição espaçada com FSRS (15/11)
+A questão em aberto sobre o algoritmo (seção 10.2 do documento) foi decidida pelo **FSRS**, usando a biblioteca oficial **ts-fsrs**, mantida pelos autores do algoritmo. Implementar as fórmulas à mão seria arriscado; integrar uma biblioteca confiável e adaptá-la ao modelo é o trabalho que importa aqui. A modelagem do CauanGS já usava os nomes do FSRS (`stability`, `difficulty`, `due_at`), o que facilitou.
+
+| FSRS | Modelo (`user_cards`) | Como ficou ([`lib/v2/srs.js`](../lib/v2/srs.js)) |
+|---|---|---|
+| 4 estados (com Relearning) | NEW, LEARNING, REVIEW | Relearning (errar uma carta que já sabia) vira LEARNING |
+| Campos internos (`scheduled_days`, `learning_steps`) | Não existem | Guardados em `srs_extra` (proposta) |
+| 4 notas (Again, Hard, Good, Easy) | 3 botões do Karta | Não sei = Again, Acho que sei = Hard, Decorei = Good |
+
+Com o algoritmo de verdade, as respostas "Decorei" seguidas espaçam a carta em **2 → 13 → 48 → 173 → 521 dias**. Os testes ([`scripts/testar-srs.mjs`](../scripts/testar-srs.mjs)) verificam comportamento, não números decorados: quanto melhor a resposta, mais tarde a carta volta; o intervalo cresce a cada acerto; errar uma carta madura a devolve no mesmo dia, conta um lapso e reduz a estabilidade.
+
+Duas coisas apareceram no caminho:
+- **A regra das irmãs escondia a própria carta errada.** Com o FSRS, a carta errada volta em minutos, mas a fila do dia a tratava como "palavra já estudada hoje". A regra passou a barrar só as irmãs; um teste novo cobre o caso.
+- **A versão instalada era a 6**, mais nova que a esperada, e tinha removido um campo do cartão (`elapsed_days`). Conferir a interface instalada antes de confiar no código evitou guardar um campo vazio.
+
+---
+
 ## Próximas etapas
 - [x] Áudio de cada carta (Gemini TTS, com a voz do navegador como plano B)
 - [x] Exportação `.apkg` para o Anki
