@@ -3,6 +3,8 @@
 import { lerPalavras } from "../lib/v2/portaEntrada.js";
 import { montarCartas, CATALOGO_PONTES } from "../lib/v2/pontes.js";
 import { montarFilaDoDia } from "../lib/v2/sessao.js";
+import { criarRepositorio } from "../lib/v2/banco.js";
+import { adaptadorMemoria, adaptadorIndexedDB } from "../lib/v2/adaptadores.js";
 import { calcularLacuna, fraseComLacuna, validarMandarim, montarPalavraEnriquecida, capitalizarPinyin, alertas } from "../lib/v2/facetas.js";
 
 let falhas = 0;
@@ -80,6 +82,69 @@ conferir(!f2.some((c) => c.concept_id === todas[0].concept_id), "palavra que já
 const revisao = todas.map((c, i) => (i === 3 ? { ...c, state: "REVIEW", last_review_at: "2026-11-10T09:00:00", due_at: "2026-11-14T10:00:00" } : c));
 const { fila: f3 } = montarFilaDoDia(revisao, { agora });
 conferir(f3[0].id === todas[3].id, "revisão atrasada vem antes das cartas novas");
+
+
+// Os mesmos testes rodam em cada adaptador de armazenamento
+async function testarRepositorio(nome, db) {
+  console.log(`\n— Armazenamento (${nome})`);
+  const repo = criarRepositorio(db);
+  await repo.iniciar(); await repo.iniciar();
+  conferir((await repo.pontes()).length === 7, "catálogo de 7 pontes gravado uma vez só, mesmo iniciando duas vezes");
+
+  const deck = await repo.criarBaralho({ name: "Comida", creation_mode: "words", target_language: "zh", level: "HSK 2" });
+  const palavras = ["água", "chá"].map((g) => base(g));
+  const r = await repo.adicionarPalavras(deck.id, palavras);
+  conferir(r.palavras === 2 && r.cartas === 14, "guarda 2 palavras e cria 14 cartas (7 por palavra)");
+  const [lista] = await repo.listarBaralhos();
+  conferir(lista.palavras === 2 && lista.cartas === 14, "a biblioteca conta palavras e cartas separadas (\"2 palavras · 14 cartas\")");
+
+  const r2 = await repo.adicionarPalavras(deck.id, [base("sol")]);
+  const b = await repo.carregarBaralho(deck.id);
+  conferir(r2.cartas === 7 && b.cartas.length === 21 && b.palavras.map((p) => p.concept.position).join() === "0,1,2", "adicionar palavras não reprocessa as antigas e mantém a ordem");
+  conferir(b.cartas.every((c) => c.deck_id === deck.id), "cada carta sabe a qual baralho pertence");
+
+  const aguaSalva = b.palavras[0];
+  const escrita = aguaSalva.facets.find((f) => f.facet_type === "WORD");
+  const afetadas = await repo.cartasAfetadas(escrita.id);
+  conferir(afetadas.length === 5, "editar a escrita afeta 5 das 7 cartas da palavra (as que mostram a escrita)");
+  const estudada = { ...b.cartas.find((c) => c.concept_id === aguaSalva.concept.id && c.bridge_template_id === "WORD_TO_MEANING"), state: "REVIEW", reps: 3, stability: 4.2 };
+  await repo.atualizarCarta(estudada);
+  const { reiniciadas } = await repo.editarFaceta(escrita.id, { value: "开水" });
+  const depois = await repo.carregarBaralho(deck.id);
+  const cartaDepois = depois.cartas.find((c) => c.id === estudada.id);
+  const fac = depois.palavras[0].facets;
+  conferir(reiniciadas === 5 && cartaDepois.state === "NEW" && cartaDepois.reps === 0 && cartaDepois.stability === null, "editar a escrita reinicia as cartas que a usam (volta a NEW e zera a memória)");
+  conferir(fac.find((f) => f.id === escrita.id).edited_by_user === true, "a faceta editada fica marcada (não será sobrescrita pela IA)");
+  conferir(fac.find((f) => f.facet_type === "AUDIO" && f.parent_facet_id === escrita.id).status === "pending", "mudar a escrita deixa o áudio dela pendente de novo");
+
+  await repo.atualizarCarta({ ...cartaDepois, state: "REVIEW", reps: 2 });
+  const significado = fac.find((f) => f.facet_type === "MEANING");
+  const pequena = await repo.editarFaceta(significado.id, { value: "água." }, { reiniciar: false });
+  conferir(pequena.reiniciadas === 0 && (await repo.carregarBaralho(deck.id)).cartas.find((c) => c.id === estudada.id).reps === 2, "correção pequena (reiniciar: false) não apaga o histórico de estudo");
+
+  const audio = fac.find((f) => f.facet_type === "AUDIO");
+  await repo.salvarAudio(audio.id, "bytes-do-wav");
+  conferir((await repo.obterAudio(audio.id)) === "bytes-do-wav" && !(await repo.audiosPendentes(deck.id)).some((a) => a.id === audio.id), "áudio salvo vira ready e sai da contagem de pendentes");
+
+  await repo.suspenderCarta(estudada.id);
+  conferir((await repo.carregarBaralho(deck.id)).cartas.find((c) => c.id === estudada.id).suspended === true, "suspender carta (em vez de excluir)");
+
+  await repo.excluirPalavra(aguaSalva.concept.id);
+  const semAgua = await repo.carregarBaralho(deck.id);
+  conferir(semAgua.palavras.length === 2 && semAgua.cartas.length === 14 && (await repo.obterAudio(audio.id)) === null, "excluir palavra remove facetas, cartas e áudio dela");
+
+  await repo.excluirBaralho(deck.id);
+  conferir((await repo.listarBaralhos()).length === 0 && (await db.todos("facets")).length === 0 && (await db.todos("user_cards")).length === 0, "excluir baralho não deixa nada para trás");
+}
+
+await testarRepositorio("memória", adaptadorMemoria());
+try {
+  const { indexedDB } = await import("fake-indexeddb");
+  await testarRepositorio("IndexedDB simulado", adaptadorIndexedDB(`teste-${Date.now()}`, indexedDB));
+} catch (e) {
+  if (e?.code === "ERR_MODULE_NOT_FOUND") console.log("\n(IndexedDB simulado não instalado: rode npm install para testar também o adaptador do navegador)");
+  else throw e;
+}
 
 console.log(falhas ? `\n${falhas} teste(s) falharam.` : "\nTodos os testes passaram.");
 process.exit(falhas ? 1 : 0);
