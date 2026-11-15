@@ -13,6 +13,15 @@ O Karta começou como uma nova interface para o [Agente_Flashcards_Mandarim](htt
 
 O código original do Gabriel está preservado em [`v1-python/`](v1-python), com o histórico completo dos commits dele neste repositório. O Karta reescreveu a implementação do zero como app web, sem reaproveitar código: trocou os provedores pelo Gemini, chegou a 5 idiomas e acrescentou modo estudo com repetição espaçada, modelos reserva e diagnóstico. A comparação completa está no [diário](docs/processo.md#origem-o-projeto-do-gabriel).
 
+## Autoria
+| Quem | O quê |
+|---|---|
+| **Rebeca** | Produto, design das telas, implementação (com IA), testes e documentação |
+| **Gabriel Pinto** | Pipeline original em Python ([`v1-python/`](v1-python)), que deu origem ao projeto; coautor da [arquitetura modular da v2](docs/arquitetura/) |
+| **CauanGS** | [Modelagem de dados por facetas e pontes](docs/modelagem/), base do modelo de dados da v2 |
+
+A v2 (cartas por conexão) está em design: veja [`docs/arquitetura`](docs/arquitetura/).
+
 ## Por que existe
 Montar um baralho bom de vocabulário dá trabalho: escolher as palavras do nível, conferir a pronúncia e achar uma frase de exemplo que não use palavras mais difíceis que a própria carta. O Karta faz essa parte em segundos e deixa a pessoa só estudar.
 

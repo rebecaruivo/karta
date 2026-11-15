@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Karta — cartas por conexão</title>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&family=Outfit:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{box-sizing:border-box;color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:#fff}*{box-sizing:border-box}
+.wrap{overflow-x:auto;max-width:100%}
+.s{background:#fff;font-family:Figtree,sans-serif;color:#0F1B2D;display:flex;flex-direction:column;justify-content:flex-start;gap:28px;width:1610px;padding:48px}
+.card{background:#F3F7FF;border:1px solid #D3DEF3;border-radius:24px;box-shadow:0 8px 0 -2px #E1EAF9,0 16px 0 -4px #EEF3FC}
+.jp{font-family:'Noto Sans JP',sans-serif}.h{font-family:Outfit,sans-serif}.sub{color:#475569}
+.chip{display:inline-block;font-size:14px;font-weight:500;color:#1E3A8A;background:#DCE7FF;border-radius:999px;padding:4px 12px}
+mark{background:none;color:#1E4FD8;font-weight:700;box-shadow:inset 0 -4px #B5C9F7}
+p{margin:0}
+.mc{width:340px;height:260px;padding:16px 20px;border-radius:20px;background:#F3F7FF;border:1px solid #D3DEF3;display:flex;flex-direction:column;align-items:center;justify-content:space-between;text-align:center}
+.mb{display:flex;flex-direction:column;align-items:center;gap:8px;position:relative}
+.bt{height:44px;display:flex;align-items:center}
+.pb{width:72px;height:72px;border:0;border-radius:20px;background:#1E4FD8;color:#fff;display:grid;place-items:center;cursor:pointer}
+.sg{display:flex;gap:4px;padding:4px;background:#DCE7FF;border-radius:12px}.sg span{padding:6px 14px;border-radius:8px;font:600 14px Figtree,sans-serif;color:#1E3A8A}.sg .on{background:#fff}
+.bl{display:inline-block;width:56px;border-bottom:3px solid #1E4FD8;margin:0 4px}
+.tb{display:inline-flex;align-items:center;gap:8px;height:44px;padding:0 16px;border:0;border-radius:10px;background:#DCE7FF;color:#1E3A8A;font:600 15px Figtree,sans-serif;cursor:pointer}
+.ch{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.lt{font:600 20px Outfit,sans-serif}
+.tg{font-size:13px;font-weight:500;color:#1E3A8A;background:#DCE7FF;padding:3px 10px;border-radius:8px}.tg.v{background:#1E4FD8;color:#fff}
+.g{display:grid;grid-template-columns:1fr 1fr;gap:40px 56px}
+.pr{display:flex;align-items:center;gap:24px}
+.k{font-family:'Noto Sans JP',sans-serif}
+.tw{position:relative;justify-content:center}
+.tp{position:relative;width:32px;height:32px;border:0;border-radius:10px;background:#DCE7FF;color:#1E3A8A;display:grid;place-items:center;cursor:pointer}
+.tt{position:absolute;top:50%;left:calc(50% + 24px);transform:translateY(-50%);background:#0F1B2D;color:#fff;padding:4px 10px;border-radius:6px;font:500 14px Figtree,sans-serif;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s}
+.tw:hover .tt,.tw:focus-within .tt{opacity:1}
+.sc{position:absolute;top:100%;left:50%;transform:translateX(-50%);margin-top:10px;width:max-content;max-width:300px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.tp svg{width:16px;height:16px}.tp::after{content:"";position:absolute;inset:-6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="s">
+<div><h1 class="h" style="margin:0;font-size:32px;font-weight:600">Cartas por conexão: frente → verso</h1><p class="sub" style="font-size:17px;margin-top:6px">Esqueleto fixo em todas: instrução no topo, conteúdo ao centro, dica ou ação embaixo. Em azul sólido, as conexões em que áudio e frase são o verso.</p></div>
+<div class="g">
+
+<div><div class="ch"><span class="lt">Áudio → Palavra</span><span class="tg">Áudio na frente</span></div><div class="pr">
+<div class="mc"><span class="chip">Compreensão de palavra</span><div class="mb"><button class="pb" aria-label="Ouvir"><svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"></path></svg></button></div><div class="bt"></div></div><svg width="40" height="24" viewBox="0 0 40 24" fill="none" stroke="#51648F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h30M26 4l8 8-8 8"></path></svg>
+<div class="mc"><span class="chip">Compreensão de palavra</span><div class="mb"><span class="k" lang="ja" style="font-size:64px;line-height:1">水</span><div class="sc"><p class="k" lang="ja" style="font-size:20px">みず <span class="sub" style="font-size:16px">· mizu</span></p></div></div><div class="bt tw"><button class="tp" aria-label="Ver tradução"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"></rect><path d="M12 11v5M12 8h.01"></path></svg></button><span class="tt" role="tooltip">água</span></div></div></div></div>
+
+<div><div class="ch"><span class="lt">Áudio → Significado</span><span class="tg">Áudio na frente</span></div><div class="pr">
+<div class="mc"><span class="chip">Tradução de palavra</span><div class="mb"><button class="pb" aria-label="Ouvir"><svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"></path></svg></button></div><div class="bt"></div></div><svg width="40" height="24" viewBox="0 0 40 24" fill="none" stroke="#51648F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h30M26 4l8 8-8 8"></path></svg>
+<div class="mc"><span class="chip">Tradução de palavra</span><div class="mb"><h2 class="h" style="margin:0;font-size:44px;font-weight:600;line-height:1.1">água</h2><div class="sc"><p class="k sub" lang="ja" style="font-size:20px">水 · みず</p></div></div><div class="bt"></div></div></div></div>
+
+<div><div class="ch"><span class="lt">Palavra → Áudio</span><span class="tg v">Áudio no verso</span></div><div class="pr">
+<div class="mc"><span class="chip">Pronúncia de palavra</span><div class="mb"><span class="k" lang="ja" style="font-size:72px;line-height:1">水</span></div><div class="bt"></div></div><svg width="40" height="24" viewBox="0 0 40 24" fill="none" stroke="#51648F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h30M26 4l8 8-8 8"></path></svg>
+<div class="mc"><span class="chip">Pronúncia de palavra</span><div class="mb"><button class="pb" aria-label="Ouvir"><svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"></path></svg></button></div><div class="bt sub" style="font-size:16px;justify-content:center"><span class="k" lang="ja">みず</span>&nbsp;·&nbsp;mizu</div></div></div></div>
+
+<div><div class="ch"><span class="lt">Significado → Frase</span><span class="tg v">Frase no verso</span></div><div class="pr">
+<div class="mc"><span class="chip">Tradução para o japonês</span><div class="mb"><p class="h" style="font-size:32px;font-weight:500">Eu bebo água.</p></div><div class="bt"></div></div><svg width="40" height="24" viewBox="0 0 40 24" fill="none" stroke="#51648F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h30M26 4l8 8-8 8"></path></svg>
+<div class="mc"><span class="chip">Tradução para o japonês</span><div class="mb"><p class="k" lang="ja" style="font-size:32px"><mark>水</mark>を飲みます。</p><div class="sc"><p class="sub" style="font-size:16px">mizu o nomimasu</p></div></div><div class="bt"><button class="tb"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"></path><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"></path></svg> Ouvir frase</button></div></div></div></div>
+
+<div><div class="ch"><span class="lt">Áudio da frase → Frase</span><span class="tg v">Frase no verso</span></div><div class="pr">
+<div class="mc"><span class="chip">Compreensão de frase</span><div class="mb"><button class="pb" aria-label="Ouvir"><svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"></path></svg></button></div><div class="bt"><div class="sg"><span class="on">Normal</span><span>Lenta</span></div></div></div><svg width="40" height="24" viewBox="0 0 40 24" fill="none" stroke="#51648F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h30M26 4l8 8-8 8"></path></svg>
+<div class="mc"><span class="chip">Compreensão de frase</span><div class="mb"><p class="k" lang="ja" style="font-size:30px"><mark>水</mark>を飲みます。</p><div class="sc"><p class="sub" style="font-size:15px">mizu o nomimasu</p></div></div><div class="bt tw"><button class="tp" aria-label="Ver tradução"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"></rect><path d="M12 11v5M12 8h.01"></path></svg></button><span class="tt" role="tooltip">Eu bebo água.</span></div></div></div></div>
+
+<div><div class="ch"><span class="lt">Frase com lacuna → Palavra</span><span class="tg">Frase na frente</span></div><div class="pr">
+<div class="mc"><span class="chip">Complete a lacuna</span><div class="mb"><p class="k" lang="ja" style="font-size:32px"><span class="bl"></span>を飲みます。</p><div class="sc"><p class="sub" style="font-size:17px">Eu bebo água.</p></div></div><div class="bt"></div></div><svg width="40" height="24" viewBox="0 0 40 24" fill="none" stroke="#51648F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h30M26 4l8 8-8 8"></path></svg>
+<div class="mc"><span class="chip">Complete a lacuna</span><div class="mb"><p class="k" lang="ja" style="font-size:32px"><mark>水</mark>を飲みます。</p><div class="sc"><p class="sub" style="font-size:16px"><span class="k" lang="ja">水</span> · みず · água</p></div></div><div class="bt"><button class="tb"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H3v6h3l5 4z"></path><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"></path></svg> Ouvir frase</button></div></div></div></div>
+
+<div><div class="ch"><span class="lt">Palavra → Significado</span><span class="tg">Texto nos dois lados</span></div><div class="pr">
+<div class="mc"><span class="chip">Tradução de palavra</span><div class="mb"><span class="k" lang="ja" style="font-size:72px;line-height:1">水</span></div><div class="bt"></div></div><svg width="40" height="24" viewBox="0 0 40 24" fill="none" stroke="#51648F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12h30M26 4l8 8-8 8"></path></svg>
+<div class="mc"><span class="chip">Tradução de palavra</span><div class="mb"><h2 class="h" style="margin:0;font-size:44px;font-weight:600;line-height:1.1">água</h2><div class="sc"><p class="sub" style="font-size:16px">substantivo</p></div></div><div class="bt"></div></div></div></div>
+
+</div></div>
+</div>
+</body>
+</html>
