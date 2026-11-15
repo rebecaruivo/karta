@@ -9,7 +9,9 @@
     "diagnostico": "node --env-file=.env.local scripts/diagnostico.mjs",
     "diagnostico:voz": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/diagnostico-voz.mjs",
     "postinstall": "node scripts/copiar-sqljs.mjs",
-    "testar:apkg": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/testar-apkg.mjs"
+    "testar:apkg": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/testar-apkg.mjs",
+    "testar:v2": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/testar-v2.mjs",
+    "prototipo:modulo2": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/prototipo-modulo2.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.0.0",
