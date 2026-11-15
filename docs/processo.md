@@ -266,6 +266,19 @@ Decisões:
 
 ---
 
+## v2 · Exportação para o Anki (15/11)
+O baralho da v2 agora sai como `.apkg`, com os 7 tipos de carta. Conferido importando no Anki.
+
+- **Uma nota por palavra, um tipo de cartão por ponte.** No Anki, uma nota guarda os dados e gera vários cartões, um por modelo. É o mesmo desenho das facetas e pontes: as facetas viram campos da nota, e cada ponte do catálogo vira um modelo de cartão, na ordem de apresentação (fácil → difícil). Cada carta do Karta vira um cartão; cartas suspensas ficam de fora, e baralho sem áudio sai com 3 cartões por palavra.
+- **Reaproveitar sem duplicar.** A v1 já montava o pacote (banco SQLite do Anki, ZIP, mapa de mídia, IDs estáveis). Separei essas partes em funções comuns, e o teste da v1 confirmou que nada quebrou antes de escrever a v2 por cima.
+- **O plano B do áudio também existe no Anki.** Gravação pronta vai dentro do pacote; sem gravação, o cartão usa a voz do sistema do próprio Anki (`{{tts zh_CN:...}}`), o equivalente à voz do navegador no Karta.
+- **A lacuna e o destaque saem das posições calculadas pelo código**, como no app, e não de um pedido à IA.
+- **O histórico de estudo não vai junto:** os cartões chegam novos. O Anki tem o próprio agendador, e converter o estado do FSRS seria outro projeto.
+
+O teste (`npm run testar:apkg`) ganhou 9 verificações da v2 e gera `amostra-v2.apkg` para importar e conferir à mão.
+
+---
+
 ## Próximas etapas
 - [x] Áudio de cada carta (Gemini TTS, com a voz do navegador como plano B)
 - [x] Exportação `.apkg` para o Anki

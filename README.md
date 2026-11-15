@@ -38,6 +38,7 @@ Modo B: suas palavras ─▶ porta de entrada ───────────�
 - **O Módulo 3 não usa IA:** as cartas saem de um catálogo de 7 conexões, sem custo nem variação.
 - **Repetição espaçada com FSRS** ([ts-fsrs](https://github.com/open-spaced-repetition/ts-fsrs)), o algoritmo que o Anki oferece desde 2023, com dados no IndexedDB do navegador.
 - **Áudio opcional por baralho**, e em Configurações a pessoa escolhe de onde vem a voz: gravações do Gemini, voz do navegador ou as duas.
+- **Exporta para o Anki** (`.apkg`): uma nota por palavra e um tipo de cartão por conexão, com as gravações dentro do pacote e a voz do sistema do Anki como plano B.
 - **O baralho continua editável:** acrescentar palavras (digitando ou pedindo à IA), corrigir sem perder o histórico de estudo, gerar uma palavra de novo e excluir em massa.
 
 A arquitetura foi desenhada com Gabriel Pinto ([`docs/arquitetura`](docs/arquitetura/)), sobre a modelagem de dados de CauanGS ([`docs/modelagem`](docs/modelagem/)). As decisões e o que deu errado no caminho estão no [diário](docs/processo.md).
@@ -54,7 +55,7 @@ Montar um baralho bom de vocabulário dá trabalho: escolher as palavras do nív
 | API sem backend próprio | Rotas `/api` que viram funções serverless; cada visitante usa a própria chave, então a cota do projeto não é exposta |
 | Diagnóstico de problemas reais | [`scripts/diagnostico.mjs`](scripts/diagnostico.mjs), os 6 problemas do [primeiro teste](docs/processo.md#dia-2-1411-as-telas-e-o-primeiro-teste-real) e o [chiado causado por um certificado C2PA](docs/processo.md#dia-2-à-tarde-1411-áudio) |
 | Do design ao produto | [Mockups](docs/design) que viraram as telas reais |
-| Testes automáticos | [`scripts/testar-apkg.mjs`](scripts/testar-apkg.mjs) (formato do Anki), [`scripts/testar-v2.mjs`](scripts/testar-v2.mjs) (95 verificações da v2) e [`scripts/testar-srs.mjs`](scripts/testar-srs.mjs) (repetição espaçada) |
+| Testes automáticos | [`scripts/testar-apkg.mjs`](scripts/testar-apkg.mjs) (formato do Anki, v1 e v2), [`scripts/testar-v2.mjs`](scripts/testar-v2.mjs) (95 verificações da v2) e [`scripts/testar-srs.mjs`](scripts/testar-srs.mjs) (repetição espaçada) |
 | Pipeline de IA em etapas, com uma pessoa no meio | v2: [Módulo 1](lib/v2/modulo1.js) → revisão → [Módulo 2](lib/v2/modulo2.js) → [Módulo 3](lib/v2/pontes.js), cada um com uma responsabilidade |
 | Validar a IA com fonte externa | [`lib/v2/dados/hsk.js`](lib/v2/dados/hsk.js), gerado da lista oficial do HSK por [`scripts/baixar-hsk.mjs`](scripts/baixar-hsk.mjs) |
 | Protótipo antes de construir | [`scripts/prototipo-modulo2.mjs`](scripts/prototipo-modulo2.mjs) mediu qualidade, custo e tempo de dois modelos antes da escolha |
@@ -101,7 +102,7 @@ Pré-requisitos: Node.js 20 ou mais novo e uma chave do Gemini ([aistudio.google
 npm install
 cp .env.example .env.local      # coloque sua chave em GEMINI_API_KEY
 npm run diagnostico             # confere a chave e mede quais modelos estão respondendo
-npm run testar:apkg             # testa a exportação para o Anki
+npm run testar:apkg             # testa a exportação para o Anki (v1 e v2)
 npm run testar:v2               # testa a v2 (porta de entrada, módulos, cartas, fila, edição, banco)
 npm run testar:srs              # testa a repetição espaçada (FSRS)
 npm run dev
@@ -147,7 +148,6 @@ docs/
 ```
 
 ## Próximos passos
-- v2: exportar para o Anki, com os 7 tipos de carta
 - v2: ligar ou desligar o áudio depois de criar o baralho
 
 ## Como foi feito
