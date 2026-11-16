@@ -6,6 +6,8 @@ import { montarPedido as pedidoM2, enriquecer } from "../lib/v2/modulo2.js";
 import { montarCartas, CATALOGO_PONTES } from "../lib/v2/pontes.js";
 import { montarFila, espacarPalavras } from "../lib/v2/sessao.js";
 import { separarPorGloss, separarRepetidas, escritasDoBaralho } from "../lib/v2/edicao.js";
+import { chavePalavra, consultarBanco, concluirComBanco, bancoPalavrasMemoria } from "../lib/v2/bancoPalavras.js";
+import { bancoPalavrasPostgres, ESQUEMA } from "../lib/v2/bancoPalavrasPostgres.js";
 import { criarRepositorio } from "../lib/v2/banco.js";
 import { adaptadorMemoria, adaptadorIndexedDB } from "../lib/v2/adaptadores.js";
 import { podeGerarAudio, usaGravacao, usaVozDoNavegador } from "../lib/preferencias.js";
@@ -77,6 +79,80 @@ conferir(!m1.INSTRUCAO_SISTEMA.includes('"comida" é amplo') && m1.INSTRUCAO_SIS
 const iaRecusa = { models: { generateContent: async () => ({ text: JSON.stringify({ theme_ok: false, suggested_themes: [" frutas: 苹果, 香蕉", "", "苹果", "pratos do dia a dia", "x".repeat(60), "bebidas", "doces"], words: [] }) }) } };
 const recusa = await m1.gerarPalavras(iaRecusa, "simulado", { theme: "coisas", level: "HSK 1", count: 5 });
 conferir(recusa.refinar.join("|") === "frutas|pratos do dia a dia|bebidas", "tema recusado devolve até 3 sugestões limpas (sem exemplos depois de \":\", sem chinês, sem vazias nem longas demais)");
+
+console.log("\n— Banco de palavras (palavras já geradas não gastam a cota)");
+conferir(chavePalavra({ versao: 4, language: "zh", level: "HSK 1", gloss: " Água ", sense_hint: null }) === chavePalavra({ versao: 4, language: "zh", level: "hsk 1", gloss: "água", sense_hint: "" }), "a chave ignora maiúsculas e espaços (\"Água\" = \"água\")");
+conferir(chavePalavra({ versao: 4, language: "zh", level: "HSK 1", gloss: "água" }) !== chavePalavra({ versao: 5, language: "zh", level: "HSK 1", gloss: "água" }), "prompt novo = chave nova (as palavras antigas deixam de valer sozinhas)");
+conferir(chavePalavra({ versao: 4, language: "zh", level: "HSK 1", gloss: "banco", sense_hint: "dinheiro" }) !== chavePalavra({ versao: 4, language: "zh", level: "HSK 1", gloss: "banco", sense_hint: "assento" }), "sentidos diferentes não se misturam (banco · dinheiro ≠ banco · assento)");
+
+// Gemini simulado: conta quantas palavras realmente foram pedidas
+const respostas = { água: boa, chá: { ...boa, lemma: "茶", target_in_sentence: "茶", sentence: "我喝茶。", meaning: "chá" }, xyz: { ...boa, lemma: "龘", target_in_sentence: "龘", sentence: "龘龘。" } };
+let pedidas = 0;
+const iaContando = { models: { generateContent: async ({ contents }) => {
+  const ids = [...contents.matchAll(/id (w\d+): "([^"]+)"/g)];
+  pedidas += ids.length;
+  return { text: JSON.stringify({ words: ids.map(([, id, g]) => ({ id, ...respostas[g] })) }), usageMetadata: {} };
+} } };
+const bancoT = bancoPalavrasMemoria();
+const hsk2 = { 水: 1, 茶: 1 };
+async function criar(words, { regerar = false } = {}) {
+  const wl = { origin: "words", target_language: "zh", level: "HSK 1", words };
+  const c = await consultarBanco(wl, { banco: bancoT, versao: 4, ignorar: regerar });
+  const ia = c.faltam.length ? (await enriquecer(iaContando, "simulado", { ...wl, words: c.faltam })).resultados : [];
+  return { c, resultados: await concluirComBanco(wl, { ...c, resultadosIA: ia, banco: bancoT, versao: 4, dicionario: hsk2, substituir: regerar }) };
+}
+const p1 = await criar([{ id: "w1", gloss: "água" }, { id: "w2", gloss: "chá" }, { id: "w3", gloss: "xyz" }]);
+conferir(pedidas === 3 && bancoT.dados.size === 2, "1ª pessoa: as 3 palavras vão para a IA; só as 2 que estão na lista do HSK entram no banco");
+conferir(p1.resultados.every((r) => !("_bruto" in r) && !("_entradaId" in r)), "campos internos do banco de palavras não vão para o navegador");
+const linha = [...bancoT.dados.values()][0];
+conferir(linha.lemma === "水" && linha.meaning && !("id" in linha), "guarda a resposta campo a campo, sem o id do pedido");
+pedidas = 0;
+const p2 = await criar([{ id: "w1", gloss: "chá" }, { id: "w2", gloss: "sol" }, { id: "w3", gloss: "Água" }]);
+conferir(pedidas === 1 && p2.c.doBanco.size === 2, "2ª pessoa: \"chá\" e \"Água\" vêm do banco; só \"sol\" vai para a IA");
+conferir(p2.resultados.map((r) => r.concept.gloss).join() === "chá,sol,Água", "a ordem original das palavras é mantida");
+const idsP1 = p1.resultados[0].facets.map((f) => f.id), idsP2 = p2.resultados[2].facets.map((f) => f.id);
+conferir(p2.resultados[2].facets[0].value === "水" && !idsP1.some((id) => idsP2.includes(id)), "palavra do banco ganha IDs novos (dois baralhos nunca compartilham facetas)");
+pedidas = 0;
+await criar([{ id: "w1", gloss: "água", lemma: "开水" }]);
+conferir(pedidas === 1, "se o Módulo 1 escolheu outro mandarim, a versão do banco não é usada");
+const antes = bancoT.dados.get(chavePalavra({ versao: 4, language: "zh", level: "HSK 1", gloss: "chá" }));
+respostas.chá = { ...respostas.chá, sentence: "她喝茶。", sentence_translation: "Ela bebe chá." };
+pedidas = 0;
+await criar([{ id: "w1", gloss: "chá" }], { regerar: true });
+const depoisR = bancoT.dados.get(chavePalavra({ versao: 4, language: "zh", level: "HSK 1", gloss: "chá" }));
+conferir(pedidas === 1 && antes.sentence === "我喝茶。" && depoisR.sentence === "她喝茶。", "\"Gerar de novo\" ignora o banco e substitui a versão guardada");
+const erroBanco = { buscar: async () => new Map(), guardar: async () => { throw new Error("banco fora do ar"); } };
+const wlE = { origin: "words", target_language: "zh", level: "HSK 1", words: [{ id: "w1", gloss: "água" }] };
+const cE = await consultarBanco(wlE, { banco: erroBanco, versao: 4 });
+const rE = await concluirComBanco(wlE, { ...cE, resultadosIA: (await enriquecer(iaContando, "simulado", wlE)).resultados, banco: erroBanco, dicionario: hsk2 });
+conferir(rE.length === 1 && rE[0].facets.length > 0, "se o banco falhar ao guardar, a palavra chega mesmo assim (o banco nunca derruba a criação)");
+
+// Adaptador do Postgres com um banco simulado: confere o SQL sem precisar do Neon
+const tabela = new Map(); const comandos = [];
+const colunas = (q) => q.match(/INSERT INTO palavras_geradas \(([^)]+)\)/)?.[1].split(",").map((c) => c.trim());
+const sqlFalso = Object.assign(async (partes, ...vals) => {   // forma de template (buscar)
+  const q = partes.join("?"); comandos.push(q);
+  if (q.startsWith("UPDATE palavras_geradas SET usos")) return vals[0].filter((c) => tabela.has(c)).map((c) => { const l = tabela.get(c); l.usos++; return l; });
+  return [];
+}, { query: async (q, vals = []) => {                          // forma com $1, $2... (criar tabela, guardar)
+  comandos.push(q);
+  const cols = colunas(q);
+  if (cols) { const linha = Object.fromEntries(cols.map((c, i) => [c, vals[i]])); if (!tabela.has(linha.chave) || q.includes("DO UPDATE")) tabela.set(linha.chave, { ...linha, usos: tabela.get(linha.chave)?.usos ?? 0 }); }
+  return [];
+} });
+const pg = await bancoPalavrasPostgres(null, { sqlTeste: sqlFalso });
+conferir(ESQUEMA.every((cmd) => comandos.includes(cmd)), "cria a tabela palavras_geradas e o índice na primeira vez");
+const respostaChá = { ...boa, lemma: "茶", meaning: "chá", sentence: "我喝茶。", target_in_sentence: "茶", ambiguous: false, other_senses: "", level_fit: true, note: "" };
+await pg.guardar([{ chave: "k1", resposta: respostaChá, partes: { versao: 4, idioma: "zh", nivel: "HSK 1", entrada: "chá", sentido: null, hsk: 1 } }]);
+const gravada = tabela.get("k1");
+conferir(colunas(comandos.at(-1)).length === 19 && gravada.lemma === "茶" && gravada.significado === "chá" && gravada.frase === "我喝茶。" && gravada.hsk === 1 && gravada.versao_prompt === 4 && gravada.entrada === "chá", "cada valor vai para a coluna certa (19 colunas)");
+const voltou = (await pg.buscar(["k1", "nao-existe"])).get("k1");
+conferir(voltou.lemma === "茶" && voltou.sentence === "我喝茶。" && voltou.target_in_sentence === "茶" && voltou.pos === boa.pos, "a linha do banco volta no mesmo formato da resposta da IA");
+conferir(tabela.get("k1").usos === 1, "cada reaproveitamento soma 1 em \"usos\"");
+await pg.guardar([{ chave: "k1", resposta: { ...respostaChá, sentence: "她喝茶。" }, partes: { versao: 4, idioma: "zh", nivel: "HSK 1", entrada: "chá", sentido: null, hsk: 1 } }]);
+conferir(tabela.get("k1").frase === "我喝茶。", "guardar de novo a mesma palavra não sobrescreve (vale a primeira versão)");
+await pg.guardar([{ chave: "k1", resposta: { ...respostaChá, sentence: "她喝茶。" }, partes: { versao: 4, idioma: "zh", nivel: "HSK 1", entrada: "chá", sentido: null, hsk: 1 } }], { substituir: true });
+conferir(tabela.get("k1").frase === "她喝茶。" && tabela.get("k1").usos === 1, "\"Gerar de novo\" substitui a versão e mantém a contagem de usos");
 
 console.log("\n— Módulo 3: montagem de pontes");
 const base = (gloss, ajuste = {}) => montarPalavraEnriquecida({ id: gloss, gloss, sense_hint: null }, { ...boa, ...ajuste }, { deck_id: "d1", language: "zh", origin: "user" });

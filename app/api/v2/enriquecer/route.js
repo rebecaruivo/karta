@@ -6,6 +6,8 @@ import { enriquecer, VERSAO_PROMPT } from "@/lib/v2/modulo2.js";
 import { LIMITES } from "@/lib/v2/portaEntrada.js";
 import { escolherChave, respostaSemChave } from "@/lib/chaveServidor";
 import dicionario from "@/lib/v2/dados/hsk.js";
+import { consultarBanco, concluirComBanco } from "@/lib/v2/bancoPalavras.js";
+import { bancoPalavrasPostgres } from "@/lib/v2/bancoPalavrasPostgres.js";
 
 export const maxDuration = 60;
 
@@ -15,10 +17,8 @@ const MODELOS = [
 ].map((m) => m.trim()).filter((m, i, l) => m && l.indexOf(m) === i);
 
 export async function POST(request) {
-  const { chave } = escolherChave(request);
-  if (!chave) return respostaSemChave();
-
-  const { wordList } = (await request.json().catch(() => ({}))) || {};
+  // regerar: "Gerar de novo" ignora o banco de palavras e substitui a versão guardada
+  const { wordList, regerar = false } = (await request.json().catch(() => ({}))) || {};
   const palavras = wordList?.words;
   if (!Array.isArray(palavras) || !palavras.length || palavras.length > LIMITES.maxPalavras) {
     return Response.json({ erro: `Envie de 1 a ${LIMITES.maxPalavras} palavras.` }, { status: 400 });
@@ -34,12 +34,33 @@ export async function POST(request) {
     if (p.origin !== "ai" && p.origin !== "user") delete p.origin;
   }
 
+  // 1. Banco de palavras: as já geradas por alguém voltam prontas, sem gastar a cota
+  let banco = null;
+  try { banco = await bancoPalavrasPostgres(); } catch (e) { console.error("[banco de palavras] indisponível:", e?.message); }
+  let consulta;
+  try {
+    consulta = await consultarBanco(wordList, { banco, versao: VERSAO_PROMPT, ignorar: regerar });
+  } catch (e) {
+    console.error("[banco de palavras] falhou na consulta, seguindo sem ele:", e?.message);
+    banco = null;
+    consulta = await consultarBanco(wordList, { banco: null, versao: VERSAO_PROMPT });
+  }
+  const { doBanco, faltam, chaves } = consulta;
+  const responder = async (resultadosIA, extras = {}) => Response.json({
+    resultados: await concluirComBanco(wordList, { doBanco, chaves, resultadosIA, banco, dicionario, versao: VERSAO_PROMPT, substituir: regerar }),
+    doBanco: doBanco.size, versaoPrompt: VERSAO_PROMPT, ...extras,
+  });
+  if (!faltam.length) return responder([], { modelo: "banco de palavras", chamadas: [] });
+
+  // 2. Só o que faltou vai para o Gemini (e só aqui a chave é necessária)
+  const { chave } = escolherChave(request);
+  if (!chave) return respostaSemChave();
   const ai = new GoogleGenAI({ apiKey: chave });
   let ultimo = null;
   for (const modelo of MODELOS) {
     try {
-      const { resultados, chamadas } = await enriquecer(ai, modelo, wordList);
-      return Response.json({ resultados, chamadas, modelo, versaoPrompt: VERSAO_PROMPT });
+      const { resultados, chamadas } = await enriquecer(ai, modelo, { ...wordList, words: faltam });
+      return responder(resultados, { chamadas, modelo });
     } catch (e) {
       const status = Number(e?.status) || 0;
       ultimo = { status, detalhe: e?.message };
