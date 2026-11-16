@@ -7,7 +7,10 @@ import dicionario from "@/lib/v2/dados/hsk.js";
 
 export const maxDuration = 60;
 
+// O Módulo 1 usa um modelo mais forte que o resto: o lite trocava caracteres (戹果 no lugar de 苹果)
+// e fugia do tema, e aqui a chamada é pequena (poucas palavras curtas). O lite fica como reserva.
 const MODELOS = [
+  process.env.GEMINI_THEME_MODEL || "gemini-3.5-flash",
   process.env.GEMINI_TEXT_MODEL || "gemini-flash-lite-latest",
   ...(process.env.GEMINI_FALLBACK_MODEL || "gemini-3.1-flash-lite,gemini-3.5-flash").split(","),
 ].map((m) => m.trim()).filter((m, i, l) => m && l.indexOf(m) === i);

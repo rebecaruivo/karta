@@ -72,6 +72,11 @@ conferir(conferidas[0].lemma === null && conferidas[0].lemma_descartado === "析
 conferir(!conferidas[1].acima_do_nivel && conferidas[2].acima_do_nivel && conferidas[2].hsk === 5, "palavra acima do nível pedido é marcada, não removida");
 conferir(conferirNoHSK([{ lemma: "析璉", gloss: "x" }], null, "HSK 1")[0].lemma === "析璉", "sem a lista baixada, a checagem fica desligada");
 conferir(pedidoM1({ theme: "frutas", level: "HSK 1", count: 5 }) && (await import("../lib/v2/modulo1.js")).INSTRUCAO_SISTEMA.includes("devolva MENOS"), "prompt manda devolver menos em vez de sair do tema");
+const m1 = await import("../lib/v2/modulo1.js");
+conferir(!m1.INSTRUCAO_SISTEMA.includes('"comida" é amplo') && m1.INSTRUCAO_SISTEMA.includes("comida, família"), "prompt v3: o exemplo não ensina mais a recusar \"comida\"; temas amplos do dia a dia são aceitos");
+const iaRecusa = { models: { generateContent: async () => ({ text: JSON.stringify({ theme_ok: false, suggested_themes: [" frutas: 苹果, 香蕉", "", "苹果", "pratos do dia a dia", "x".repeat(60), "bebidas", "doces"], words: [] }) }) } };
+const recusa = await m1.gerarPalavras(iaRecusa, "simulado", { theme: "coisas", level: "HSK 1", count: 5 });
+conferir(recusa.refinar.join("|") === "frutas|pratos do dia a dia|bebidas", "tema recusado devolve até 3 sugestões limpas (sem exemplos depois de \":\", sem chinês, sem vazias nem longas demais)");
 
 console.log("\n— Módulo 3: montagem de pontes");
 const base = (gloss, ajuste = {}) => montarPalavraEnriquecida({ id: gloss, gloss, sense_hint: null }, { ...boa, ...ajuste }, { deck_id: "d1", language: "zh", origin: "user" });
