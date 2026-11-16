@@ -138,7 +138,7 @@ export default function NovoBaralhoV2() {
       setEtapa("Módulo 3: montando as cartas…");
       await repo.adicionarPalavras(deck.id, dados.resultados);
       await repo.atualizarBaralho({ ...deck, pipeline_status: "cards_ready", modelo: dados.modelo, versao_prompt: dados.versaoPrompt });
-      router.push(`/v2/baralho/${deck.id}`);
+      router.push(`/v2/baralho/${deck.id}${dados.doBanco ? `?doBanco=${dados.doBanco}` : ""}`);
     } catch (err) {
       setErro(err.message);
       setEtapa(null);

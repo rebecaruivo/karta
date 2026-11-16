@@ -17,12 +17,12 @@ import { exportarApkgV2 } from "@/lib/v2/exportarApkg";
 const MAIS_POR_VEZ = 5;
 
 // Chama o Módulo 2 (rota do servidor) para uma lista de palavras
-async function chamarModulo2(deck, palavras) {
+async function chamarModulo2(deck, palavras, { regerar = false } = {}) {
   const wordList = {
     origin: deck.creation_mode === "theme" ? "theme" : "words", theme: deck.theme ?? null, target_language: "zh", level: deck.level,
     words: palavras.map((p, i) => ({ id: `w${i + 1}`, gloss: p.gloss, lemma: p.lemma ?? null, sense_hint: p.sense_hint ?? null, origin: p.origin ?? "user" })),
   };
-  const resp = await fetch("/api/v2/enriquecer", { method: "POST", headers: cabecalhosComChave(), body: JSON.stringify({ wordList }) });
+  const resp = await fetch("/api/v2/enriquecer", { method: "POST", headers: cabecalhosComChave(), body: JSON.stringify({ wordList, regerar }) });
   const dados = await resp.json();
   if (!resp.ok) throw new Error(dados.erro || "Falha ao gerar as facetas.");
   return dados.resultados;
@@ -81,6 +81,8 @@ function Acrescentar({ deck, palavras, cartasPorPalavra, aoTerminar, aoFechar })
       setEtapa("Módulo 3: montando as cartas…");
       const r = await (await obterRepo()).adicionarPalavras(deck.id, novas);
       const partes = [`${r.palavras} palavra(s) e ${r.cartas} cartas adicionadas.`];
+      const reaproveitadas = resultados.filter((x) => x.doBanco).length;
+      if (reaproveitadas) partes.push(`${reaproveitadas} já tinham sido geradas antes e vieram prontas, sem gastar a sua cota.`);
       if (repetidas.length) partes.push(`Ficaram de fora porque o baralho já tinha o mesmo mandarim: ${repetidas.map((p) => `${p.concept.gloss} (${p.facets[0].value})`).join(", ")}.`);
       if (falharam.length) partes.push(`A IA não gerou: ${falharam.map((p) => p.concept.gloss).join(", ")}.`);
       aoTerminar(partes.join(" "));
@@ -176,7 +178,7 @@ function Corrigir({ deck, palavra, palavras, aoTerminar, aoFechar }) {
     if (!window.confirm(`Gerar ${trocou ? `“${gloss}” no lugar de “${palavra.concept.gloss}”` : `“${gloss}” de novo`}? As cartas desta palavra recomeçam do zero e as gravações dela precisam ser geradas outra vez.`)) return;
     setErro(null); setEtapa("Módulo 2: gerando a palavra de novo…");
     try {
-      const [r] = await chamarModulo2(deck, [{ gloss, sense_hint: sentido.trim() || null, origin: trocou ? "user" : palavra.concept.origin }]);
+      const [r] = await chamarModulo2(deck, [{ gloss, sense_hint: sentido.trim() || null, origin: trocou ? "user" : palavra.concept.origin }], { regerar: true });
       if (!r?.facets?.length) throw new Error("A IA não gerou a palavra. Tente de novo.");
       await (await obterRepo()).substituirPalavra(palavra.concept.id, r);
       const antes = word?.value, depois = r.facets[0].value;
@@ -274,6 +276,12 @@ export default function BaralhoV2() {
     setPendentes((await repo.audiosPendentes(id)).length);
   };
   useEffect(() => { carregar(); setModoAudio(obterModoAudio()); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Vindo da criação: avisa quantas palavras vieram do banco de palavras (?doBanco=N)
+  useEffect(() => {
+    const n = Number(new URLSearchParams(window.location.search).get("doBanco"));
+    if (n > 0) setMensagem(`${n} palavra(s) já tinham sido geradas antes e vieram prontas, sem gastar a sua cota do Gemini.`);
+  }, []);
 
   // Esc fecha o menu "Editar"
   useEffect(() => {
