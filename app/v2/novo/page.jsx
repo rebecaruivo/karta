@@ -10,6 +10,18 @@ import { obterRepo } from "@/lib/v2/cliente";
 import { cabecalhosComChave } from "@/lib/chave";
 
 const NIVEIS = ["HSK 1", "HSK 2", "HSK 3", "HSK 4", "HSK 5", "HSK 6"];
+
+// Ícone ⚠ com tooltip: abre com o mouse, com o teclado (foco) e com toque no celular
+function Alerta({ texto }) {
+  const [aberto, setAberto] = useState(false);
+  return (
+    <span className={`v2-tw v2-alerta ${aberto ? "aberto" : ""}`} tabIndex={0} role="button" aria-label={texto}
+      onClick={() => setAberto((a) => !a)} onBlur={() => setAberto(false)}>
+      <span aria-hidden="true">⚠</span>
+      <span className="v2-tt v2-tt-quebra" role="tooltip">{texto}</span>
+    </span>
+  );
+}
 const MAIS_POR_VEZ = 5;
 
 export default function NovoBaralhoV2() {
@@ -28,7 +40,7 @@ export default function NovoBaralhoV2() {
   const [tema, setTema] = useState("");
   const [quantidade, setQuantidade] = useState(10);
   const [revisao, setRevisao] = useState(null); // palavras sugeridas, em revisão: [{ chave, gloss, lemma, sense_hint, origin }]
-  const [refinar, setRefinar] = useState(null);  // sugestão da IA quando o tema é vago
+  const [refinar, setRefinar] = useState(null);  // temas sugeridos pela IA quando o tema não serve (lista)
   const [novaPalavra, setNovaPalavra] = useState("");
   const [descartadas, setDescartadas] = useState(0);
 
@@ -42,26 +54,28 @@ export default function NovoBaralhoV2() {
   function trocarModo(m) { setModo(m); setErro(null); setRefinar(null); }
 
   // ── Modo A: pede palavras ao Módulo 1 ─────────────────────────
-  async function pedirPalavras({ count, existentes = [] }) {
+  async function pedirPalavras({ count, existentes = [], temaEnviado = null }) {
     const resp = await fetch("/api/v2/palavras", {
       method: "POST", headers: cabecalhosComChave(),
-      body: JSON.stringify({ theme: temaValido.tema, level: nivel, count, existing_words: existentes }),
+      body: JSON.stringify({ theme: temaEnviado ?? temaValido.tema, level: nivel, count, existing_words: existentes }),
     });
     const dados = await resp.json();
     if (!resp.ok) throw new Error(dados.erro || "Falha ao gerar as palavras.");
     return dados;
   }
 
-  async function gerarPalavras(e) {
-    e.preventDefault();
-    if (temaValido.erro) return setErro(temaValido.erro);
+  // temaEscolhido: quando a pessoa clica num tema sugerido pela IA
+  async function gerarPalavras(e, temaEscolhido = null) {
+    e?.preventDefault();
+    const t = temaEscolhido ?? temaValido.tema;
+    if (!temaEscolhido && temaValido.erro) return setErro(temaValido.erro);
     setErro(null); setRefinar(null); setEtapa("Módulo 1: escolhendo palavras para o tema…");
     try {
-      const dados = await pedirPalavras({ count: quantidade });
+      const dados = await pedirPalavras({ count: quantidade, temaEnviado: t });
       if (dados.refinar) { setRefinar(dados.refinar); return; }
       setRevisao(dados.wordList.words.map(daIA));
       setDescartadas(dados.descartadas?.length || 0);
-      if (!nome.trim()) setNome(temaValido.tema);
+      if (!nome.trim()) setNome(t);
     } catch (err) { setErro(err.message); } finally { setEtapa(null); }
   }
 
@@ -152,7 +166,7 @@ export default function NovoBaralhoV2() {
   const caixaErro = erro && <div className="erro">{erro}{erro.includes("chave") && <> · <Link href="/configuracoes" style={{ textDecoration: "underline" }}>Configurações</Link></>}</div>;
 
   return (
-    <>
+    <div className="v2-novo">
       <Link href="/v2" className="mu">← Baralhos da v2</Link>
       <h1 style={{ margin: "12px 0 8px" }}>Novo baralho</h1>
       <p className="mu" style={{ marginBottom: 20 }}>Cada palavra vira até 7 cartas, uma para cada conexão. Nesta versão, só mandarim.</p>
@@ -167,7 +181,16 @@ export default function NovoBaralhoV2() {
           <div>
             <label className="lb" htmlFor="tema">Tema</label>
             <input id="tema" className="fi" value={tema} onChange={(e) => setTema(e.target.value)} placeholder="Ex.: frutas, no restaurante, partes do corpo" maxLength={LIMITES.maxTema} />
-            {refinar && <div className="aviso" style={{ marginTop: 10 }}><strong>Esse tema ficou amplo demais.</strong> {refinar}</div>}
+            {refinar && (
+              <p style={{ margin: "10px 0 0" }}>
+                <span className="mu">A IA não conseguiu montar um baralho com esse tema.</span>
+                {refinar.length > 0 && <> <span className="mu">Experimente:</span>{" "}
+                  {refinar.map((t, i) => (
+                    <span key={t}>{i > 0 && <span className="mu"> · </span>}
+                      <button type="button" className="v2-link" onClick={() => { setTema(t); gerarPalavras(null, t); }}>{t}</button></span>
+                  ))}</>}
+              </p>
+            )}
           </div>
           <div>
             <label className="lb" htmlFor="qtd">Quantas palavras</label>
@@ -192,16 +215,25 @@ export default function NovoBaralhoV2() {
               Edite, remova ou acrescente. Palavra editada ou acrescentada é traduzida de novo na próxima etapa.
               {descartadas > 0 && ` (${descartadas} sugestão(ões) repetida(s) ou inválida(s) foram descartadas.)`}
             </p>
-            <div style={{ display: "grid", gap: 8 }}>
-              {revisao.map((p) => (
-                <div key={p.chave} style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                  <span className="z" style={{ minWidth: 56, fontSize: 20 }} title={p.descartado ? `A IA escreveu ${p.descartado}, que não está na lista do HSK; será traduzida de novo` : p.lemma ? "Escolhida pela IA" : "Será traduzida na próxima etapa"}>{p.lemma || "…"}</span>
-                  <input className="fi v2-fi" value={p.gloss} onChange={(e) => editar(p.chave, e.target.value)} aria-label="Palavra em português" maxLength={LIMITES.maxCaracteres} disabled={Boolean(etapa)} />
-                  {p.origin === "user" && <span className="tg">sua</span>}
-                  {p.acima && <span className="tg" title={`Acima do ${nivel}`}>{p.hsk === 7 ? "HSK 6+" : `HSK ${p.hsk}`}</span>}
-                  <button type="button" className="v2-link" onClick={() => remover(p.chave)} aria-label={`Remover ${p.gloss}`} disabled={Boolean(etapa)}>remover</button>
-                </div>
-              ))}
+            {/* Uma grade só para todas as linhas: a coluna do mandarim fica do tamanho da palavra mais longa */}
+            <div className="v2-revisao">
+              {revisao.map((p) => {
+                const alerta = p.descartado
+                  ? `${p.descartado} não está na lista oficial do HSK. Na próxima etapa, o mandarim será conferido de novo a partir do português.`
+                  : p.acima ? (p.hsk === 7 ? `Esta palavra não está nos níveis HSK 1 a 6: é mais avançada que o ${nivel}.` : `Esta palavra é do HSK ${p.hsk}, acima do ${nivel} que você escolheu.`)
+                  : null;
+                return (
+                  <div key={p.chave} className="v2-revisao-linha">
+                    <span className="v2-revisao-hanzi">
+                      <span className="z" title={p.lemma || p.descartado ? undefined : "Será traduzida na próxima etapa"}>{p.lemma || p.descartado || "…"}</span>
+                      {alerta && <Alerta texto={alerta} />}
+                    </span>
+                    <input className="fi v2-fi" value={p.gloss} onChange={(e) => editar(p.chave, e.target.value)} aria-label="Palavra em português" maxLength={LIMITES.maxCaracteres} disabled={Boolean(etapa)} />
+                    <span>{p.origin === "user" && <span className="tg">sua</span>}</span>
+                    <button type="button" className="v2-x" onClick={() => remover(p.chave)} aria-label={`Remover ${p.gloss}`} title="Remover" disabled={Boolean(etapa)}>✕</button>
+                  </div>
+                );
+              })}
             </div>
           </div>
           <form onSubmit={acrescentar} style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -251,6 +283,6 @@ export default function NovoBaralhoV2() {
           )}
         </form>
       )}
-    </>
+    </div>
   );
 }

@@ -76,3 +76,17 @@
 /* Campos e botões compactos dentro dos painéis de edição */
 .v2-fi { font-size: 15px; padding: 9px 14px; border-radius: 12px; }
 .v2-bo-p { padding: 9px 18px; font-size: 14px; white-space: nowrap; flex: none; }
+
+/* Página "Novo baralho": formulário largo no computador */
+.v2-novo .form { max-width: 820px; }
+.v2-revisao { display: grid; grid-template-columns: max-content 1fr auto auto; gap: 8px 12px; align-items: center; }
+.v2-revisao-linha { display: contents; }
+.v2-revisao-hanzi { display: flex; align-items: center; gap: 6px; white-space: nowrap; font-size: 20px; min-width: 56px; }
+.v2-alerta { color: #B45309; font-size: 16px; cursor: help; outline: none; }
+.v2-alerta:focus-visible { box-shadow: 0 0 0 2px var(--v2-azul); border-radius: 4px; }
+.v2-tt-quebra { white-space: normal; width: 280px; line-height: 1.35; font-size: 14px; }
+
+/* Botão ✕ (remover) sem contorno */
+.v2-x { border: 0; background: none; width: 32px; height: 32px; border-radius: 8px; font-size: 16px; color: var(--suave); cursor: pointer; display: grid; place-items: center; }
+.v2-x:hover:not(:disabled) { background: var(--fundo-carta); color: var(--tinta); }
+.v2-x:disabled { opacity: .4; cursor: default; }

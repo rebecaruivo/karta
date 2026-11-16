@@ -62,7 +62,7 @@ function Acrescentar({ deck, palavras, cartasPorPalavra, aoTerminar, aoFechar })
       const resp = await fetch("/api/v2/palavras", { method: "POST", headers: cabecalhosComChave(), body: JSON.stringify({ theme: temaLimpo.slice(0, LIMITES.maxTema), level: deck.level, count: MAIS_POR_VEZ, existing_words: existentes }) });
       const dados = await resp.json();
       if (!resp.ok) throw new Error(dados.erro || "Falha ao buscar palavras.");
-      if (dados.refinar) throw new Error(`O tema “${temaLimpo}” ficou amplo demais. ${dados.refinar}`);
+      if (dados.refinar) throw new Error(`A IA não conseguiu sugerir palavras para “${temaLimpo}”.${dados.refinar.length ? ` Experimente: ${dados.refinar.join(", ")}.` : ""}`);
       if (!dados.wordList.words.length) throw new Error("A IA não encontrou palavras novas para esse tema.");
       juntar(dados.wordList.words.map((w) => ({ gloss: w.gloss, lemma: w.lemma, sense_hint: null, origin: "ai" })));
       // O tema que funcionou passa a ser o tema do baralho (para a próxima vez)
@@ -110,11 +110,11 @@ function Acrescentar({ deck, palavras, cartasPorPalavra, aoTerminar, aoFechar })
           <span className="mu" style={{ fontSize: 13 }}>Revise antes de gerar as cartas. Palavra editada é traduzida de novo.</span>
           {lista.map((p) => (
             <div key={p.chave} style={{ display: "flex", gap: 8, alignItems: "center" }}>
-              <span className="z" style={{ minWidth: 56, fontSize: 20 }}>{p.lemma || "…"}</span>
+              <span className="z" style={{ minWidth: 56, fontSize: 20, whiteSpace: "nowrap" }}>{p.lemma || "…"}</span>
               <input className="fi v2-fi" value={p.gloss} maxLength={LIMITES.maxCaracteres} disabled={ocupado} aria-label="Palavra em português"
                 onChange={(e) => setLista(lista.map((x) => (x.chave === p.chave ? { ...x, gloss: e.target.value, lemma: null, origin: "user" } : x)))} />
               {p.origin === "user" && <span className="tg">sua</span>}
-              <button type="button" className="v2-link" disabled={ocupado} aria-label={`Remover ${p.gloss}`} onClick={() => setLista(lista.filter((x) => x.chave !== p.chave))}>remover</button>
+              <button type="button" className="v2-x" disabled={ocupado} aria-label={`Remover ${p.gloss}`} title="Remover" onClick={() => setLista(lista.filter((x) => x.chave !== p.chave))}>✕</button>
             </div>
           ))}
         </div>
