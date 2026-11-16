@@ -204,6 +204,23 @@ async function testarRepositorio(nome, db) {
   const deckSemAudio = await repo.criarBaralho({ name: "Sem áudio", creation_mode: "words", target_language: "zh", level: "HSK 1", facetas_opcionais: [] });
   const rs = await repo.adicionarPalavras(deckSemAudio.id, [base("lua")]);
   conferir(rs.cartas === 3 && (await repo.audiosPendentes(deckSemAudio.id)).length === 0, "baralho sem áudio: 3 cartas por palavra e nenhuma gravação a gerar");
+  // Ligar/desligar áudio depois de criado
+  const pessoal = (await repo.carregarBaralho(deckSemAudio.id)).cartas[0];
+  await repo.suspenderCarta(pessoal.id); // suspensão da própria pessoa: não pode ser desfeita pelo áudio
+  const lig = await repo.definirAudio(deckSemAudio.id, true);
+  const comAudioAgora = await repo.carregarBaralho(deckSemAudio.id);
+  conferir(lig.criadas === 4 && comAudioAgora.cartas.length === 7 && comAudioAgora.deck.facetas_opcionais.includes("AUDIO"), "ligar o áudio cria as 4 cartas de áudio que faltavam");
+  const cartaAudio = comAudioAgora.cartas.find((c) => c.bridge_template_id === "AUDIO_TO_WORD");
+  await repo.atualizarCarta({ ...cartaAudio, state: "REVIEW", reps: 4 });
+  const des = await repo.definirAudio(deckSemAudio.id, false);
+  const desligado = await repo.carregarBaralho(deckSemAudio.id);
+  conferir(des.suspensas === 4 && desligado.cartas.filter((c) => !c.suspended).length === 2 && (await repo.audiosPendentes(deckSemAudio.id)).length === 0, "desligar suspende as 4 cartas de áudio (não apaga) e não pede gravações");
+  conferir((await repo.listarBaralhos()).find((d) => d.id === deckSemAudio.id).cartas === 2, "a contagem do baralho mostra só as cartas ativas");
+  const rel = await repo.definirAudio(deckSemAudio.id, true);
+  const religado = await repo.carregarBaralho(deckSemAudio.id);
+  const volta = religado.cartas.find((c) => c.id === cartaAudio.id);
+  conferir(rel.reativadas === 4 && rel.criadas === 0 && volta.reps === 4 && !volta.suspended && !("suspensa_por" in volta), "ligar de novo reativa as mesmas cartas, com o histórico de estudo");
+  conferir(religado.cartas.find((c) => c.id === pessoal.id).suspended === true, "carta suspensa pela pessoa continua suspensa");
   await repo.excluirBaralho(deckSemAudio.id);
 
   await repo.excluirBaralho(deck.id);

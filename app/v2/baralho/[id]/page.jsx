@@ -286,7 +286,8 @@ export default function BaralhoV2() {
   if (dados === undefined) return null;
   if (dados === null) return <p>Baralho não encontrado. <Link href="/v2">Voltar</Link></p>;
 
-  const { deck, palavras, cartas } = dados;
+  const { deck, palavras } = dados;
+  const cartas = dados.cartas.filter((c) => !c.suspended); // suspensas (ex.: áudio desligado) não aparecem nem contam
   const paraEstudar = montarFila(cartas).length;
   const comAudio = (deck.facetas_opcionais ?? ["AUDIO"]).includes("AUDIO");
 
@@ -329,6 +330,19 @@ export default function BaralhoV2() {
     else if (r.falhas) setAvisoAudio(`${r.falhas} gravações falharam. Clique de novo para tentar.`);
     carregar();
   }
+  async function alternarAudio() {
+    const ligar = !comAudio;
+    const texto = ligar
+      ? "Ligar os exercícios de áudio? As cartas de escuta e pronúncia voltam com o histórico que tinham, e palavras sem elas ganham as 4 cartas de áudio."
+      : "Desligar os exercícios de áudio? As 4 cartas de escuta e pronúncia de cada palavra ficam suspensas (nada é apagado) e o botão \"Ouvir frase\" some das outras cartas. Dá para ligar de novo depois.";
+    if (!window.confirm(texto)) return;
+    const r = await (await obterRepo()).definirAudio(deck.id, ligar);
+    setMensagem(ligar
+      ? `Exercícios de áudio ligados: ${r.reativadas} cartas reativadas${r.criadas ? ` e ${r.criadas} criadas` : ""}.`
+      : `Exercícios de áudio desligados: ${r.suspensas} cartas suspensas. As gravações continuam guardadas.`);
+    carregar();
+  }
+
   async function exportar() {
     setExportando(true); setMensagem(null);
     try {
@@ -369,6 +383,10 @@ export default function BaralhoV2() {
                 </button>
                 <button role="menuitem" onClick={() => escolher("selecionar")} disabled={!palavras.length}>
                   <strong>Corrigir ou excluir palavras</strong><span className="mu">Selecione uma ou mais na lista</span>
+                </button>
+                <button role="menuitem" onClick={() => { setMenuEditar(false); alternarAudio(); }}>
+                  <strong>{comAudio ? "Desligar exercícios de áudio" : "Ligar exercícios de áudio"}</strong>
+                  <span className="mu">{comAudio ? "As cartas de escuta ficam suspensas" : "Volta às 7 cartas por palavra"}</span>
                 </button>
                 <button role="menuitem" className="v2-perigo" onClick={() => { setMenuEditar(false); excluirBaralho(); }}>
                   <strong>Excluir baralho</strong><span className="mu">Apaga o baralho e todas as cartas</span>
