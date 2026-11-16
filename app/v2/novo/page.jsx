@@ -42,6 +42,7 @@ export default function NovoBaralhoV2() {
   const [revisao, setRevisao] = useState(null); // palavras sugeridas, em revisão: [{ chave, gloss, lemma, sense_hint, origin }]
   const [refinar, setRefinar] = useState(null);  // temas sugeridos pela IA quando o tema não serve (lista)
   const [novaPalavra, setNovaPalavra] = useState("");
+  const [manual, setManual] = useState(false); // o campo de adicionar só aparece depois de clicar
   const [descartadas, setDescartadas] = useState(0);
 
   // Prévia das palavras reconhecidas (chips), antes de gastar IA (seção 3.2)
@@ -236,11 +237,17 @@ export default function NovoBaralhoV2() {
               })}
             </div>
           </div>
-          <form onSubmit={acrescentar} style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <input className="fi v2-fi" value={novaPalavra} onChange={(e) => setNovaPalavra(e.target.value)} placeholder="Acrescentar: laranja, banco (dinheiro)" disabled={Boolean(etapa)} />
-            <button type="submit" className="bo v2-bo-p" disabled={!novaPalavra.trim() || Boolean(etapa)}>Adicionar</button>
-          </form>
-          <div><button type="button" className="v2-link" onClick={pedirMais} disabled={Boolean(etapa) || revisao.length >= LIMITES.maxPalavras}>+ Pedir mais {MAIS_POR_VEZ} à IA</button></div>
+          {manual && (
+            <form onSubmit={acrescentar} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <input className="fi v2-fi" value={novaPalavra} onChange={(e) => setNovaPalavra(e.target.value)} placeholder="laranja, banco (dinheiro)" disabled={Boolean(etapa)} autoFocus aria-label="Palavras para adicionar" />
+              <button type="submit" className="bo v2-bo-p" disabled={!novaPalavra.trim() || Boolean(etapa)}>Adicionar</button>
+              <button type="button" className="v2-x" onClick={() => { setManual(false); setNovaPalavra(""); }} aria-label="Fechar" title="Fechar">✕</button>
+            </form>
+          )}
+          <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+            {!manual && <button type="button" className="v2-link" onClick={() => setManual(true)} disabled={Boolean(etapa) || revisao.length >= LIMITES.maxPalavras}>+ Adicionar manualmente</button>}
+            <button type="button" className="v2-link" onClick={pedirMais} disabled={Boolean(etapa) || revisao.length >= LIMITES.maxPalavras}>+ Pedir mais {MAIS_POR_VEZ} à IA</button>
+          </div>
           {campoNome}
           {caixaAudio}
           {caixaErro}
