@@ -300,6 +300,15 @@ Agora, o que aparece como "fora do HSK" são palavras corretas que só não est�
 
 ---
 
+## v2 · Ligar e desligar o áudio depois de criar o baralho (15/11)
+A opção "Incluir exercícios de áudio" só existia na criação. Agora fica no menu **Editar** do baralho. A decisão foi **suspender, não apagar**:
+- **Desligar** suspende as 4 cartas de áudio de cada palavra e guarda as gravações. O botão "Ouvir frase" some das outras cartas, que continuam com o histórico.
+- **Ligar de novo** reativa as mesmas cartas, com o histórico de estudo de antes; palavras que entraram com o áudio desligado ganham as cartas de áudio nessa hora.
+- As cartas suspensas pelo áudio levam uma marca (`suspensa_por`). Sem ela, religar o áudio reativaria também as cartas que a própria pessoa tinha suspendido de propósito. Um teste cobre esse caso.
+- A contagem do baralho passou a mostrar só as cartas ativas, e a exportação para o Anki já deixava as suspensas de fora.
+
+---
+
 ## Próximas etapas
 - [x] Áudio de cada carta (Gemini TTS, com a voz do navegador como plano B)
 - [x] Exportação `.apkg` para o Anki

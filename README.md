@@ -37,7 +37,7 @@ Modo B: suas palavras ─▶ porta de entrada ───────────�
 - **A IA é conferida por fontes externas e por código:** cada palavra é checada na lista oficial do HSK (o protótipo mostrou a IA trocando 西瓜 por caracteres parecidos que existem, mas estão errados); a posição da lacuna é calculada pelo código, não pela IA.
 - **O Módulo 3 não usa IA:** as cartas saem de um catálogo de 7 conexões, sem custo nem variação.
 - **Repetição espaçada com FSRS** ([ts-fsrs](https://github.com/open-spaced-repetition/ts-fsrs)), o algoritmo que o Anki oferece desde 2023, com dados no IndexedDB do navegador.
-- **Áudio opcional por baralho**, e em Configurações a pessoa escolhe de onde vem a voz: gravações do Gemini, voz do navegador ou as duas.
+- **Áudio opcional por baralho**, que dá para ligar e desligar depois sem perder o histórico; em Configurações a pessoa escolhe de onde vem a voz: gravações do Gemini, voz do navegador ou as duas.
 - **Exporta para o Anki** (`.apkg`): uma nota por palavra e um tipo de cartão por conexão, com as gravações dentro do pacote e a voz do sistema do Anki como plano B.
 - **O baralho continua editável:** acrescentar palavras (digitando ou pedindo à IA), corrigir sem perder o histórico de estudo, gerar uma palavra de novo e excluir em massa.
 
@@ -148,7 +148,7 @@ docs/
 ```
 
 ## Próximos passos
-- v2: ligar ou desligar o áudio depois de criar o baralho
+- v2: imagem como faceta opcional, nas mesmas regras do áudio
 
 ## Como foi feito
 Construído com IA de ponta a ponta, a partir do projeto de Gabriel Pinto (veja [Origem](#origem)): mockups gerados com uma ferramenta de design com IA; código escrito com o Claude como agente, a partir das minhas decisões de produto e dos meus testes; Gemini como motor do produto. Detalhes no [diário](docs/processo.md).
