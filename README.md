@@ -38,6 +38,7 @@ Modo B: suas palavras ─▶ porta de entrada ───────────�
 - **O Módulo 3 não usa IA:** as cartas saem de um catálogo de 7 conexões, sem custo nem variação.
 - **Repetição espaçada com FSRS** ([ts-fsrs](https://github.com/open-spaced-repetition/ts-fsrs)), o algoritmo que o Anki oferece desde 2023, com dados no IndexedDB do navegador.
 - **Áudio opcional por baralho**, que dá para ligar e desligar depois sem perder o histórico; em Configurações a pessoa escolhe de onde vem a voz: gravações do Gemini, voz do navegador ou as duas.
+- **Banco de palavras compartilhado** (Postgres no Neon): uma palavra gerada por alguém fica no banco e é reaproveitada por todos, sem gastar a cota do Gemini de novo.
 - **Exporta para o Anki** (`.apkg`): uma nota por palavra e um tipo de cartão por conexão, com as gravações dentro do pacote e a voz do sistema do Anki como plano B.
 - **O baralho continua editável:** acrescentar palavras (digitando ou pedindo à IA), corrigir sem perder o histórico de estudo, gerar uma palavra de novo e excluir em massa.
 
@@ -58,6 +59,7 @@ Montar um baralho bom de vocabulário dá trabalho: escolher as palavras do nív
 | Testes automáticos | [`scripts/testar-apkg.mjs`](scripts/testar-apkg.mjs) (formato do Anki, v1 e v2), [`scripts/testar-v2.mjs`](scripts/testar-v2.mjs) (95 verificações da v2) e [`scripts/testar-srs.mjs`](scripts/testar-srs.mjs) (repetição espaçada) |
 | Pipeline de IA em etapas, com uma pessoa no meio | v2: [Módulo 1](lib/v2/modulo1.js) → revisão → [Módulo 2](lib/v2/modulo2.js) → [Módulo 3](lib/v2/pontes.js), cada um com uma responsabilidade |
 | Validar a IA com fonte externa | [`lib/v2/dados/hsk.js`](lib/v2/dados/hsk.js), gerado da lista oficial do HSK por [`scripts/baixar-hsk.mjs`](scripts/baixar-hsk.mjs) |
+| Banco de dados e custo de IA | [`lib/v2/bancoPalavras.js`](lib/v2/bancoPalavras.js) e [`bancoPalavrasPostgres.js`](lib/v2/bancoPalavrasPostgres.js): palavras já geradas vêm do Postgres em vez de uma nova chamada ao Gemini |
 | Protótipo antes de construir | [`scripts/prototipo-modulo2.mjs`](scripts/prototipo-modulo2.mjs) mediu qualidade, custo e tempo de dois modelos antes da escolha |
 
 ## Como funciona
@@ -89,6 +91,7 @@ Estudo: a repetição espaçada decide quando cada carta volta
 | `localStorage` em vez de banco | MVP sem login. Limite: os dados ficam num navegador só |
 | Repetição espaçada própria (v1) | Regra simples e explicável: errou, volta na hora; acertou com segurança, o intervalo cresce 2,5× |
 | FSRS (v2) | Com até 7 cartas por palavra, o agendamento precisa ser preciso; o FSRS é o algoritmo que o Anki oferece desde 2023 e tem biblioteca mantida |
+| Neon Postgres (v2) | Banco gratuito que não pausa por inatividade (o Supabase gratuito pausa depois de uma semana), conectado pela Vercel |
 | IndexedDB (v2) | A v2 guarda facetas, cartas e gravações de áudio; o `localStorage` não comporta isso |
 
 ## Usando sem instalar
@@ -100,7 +103,7 @@ Pré-requisitos: Node.js 20 ou mais novo e uma chave do Gemini ([aistudio.google
 
 ```bash
 npm install
-cp .env.example .env.local      # coloque sua chave em GEMINI_API_KEY
+cp .env.example .env.local      # coloque sua chave em GEMINI_API_KEY (e, se quiser o banco de palavras, a DATABASE_URL do Neon)
 npm run diagnostico             # confere a chave e mede quais modelos estão respondendo
 npm run testar:apkg             # testa a exportação para o Anki (v1 e v2)
 npm run testar:v2               # testa a v2 (porta de entrada, módulos, cartas, fila, edição, banco)
@@ -148,6 +151,7 @@ docs/
 ```
 
 ## Próximos passos
+- v2: contas (Google e e-mail) e baralhos no banco, acessíveis de qualquer aparelho
 - v2: imagem como faceta opcional, nas mesmas regras do áudio
 
 ## Como foi feito

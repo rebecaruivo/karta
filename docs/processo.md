@@ -309,6 +309,26 @@ A opção "Incluir exercícios de áudio" só existia na criação. Agora fica n
 
 ---
 
+## v2 · Banco de palavras compartilhado (16/11)
+O Karta passou a ter um banco de dados de verdade: um **Postgres no Neon**, conectado pela Vercel (plano gratuito). Cada palavra gerada pelo Módulo 2 vira uma linha na tabela `palavras_geradas`, campo a campo (mandarim, pinyin, significado, frase, nível no HSK, versão do prompt, quantas vezes foi usada). Na próxima vez que **qualquer pessoa** pedir a mesma palavra no mesmo nível, ela vem do banco, sem chamar o Gemini e sem gastar a cota da chave.
+
+```sql
+select entrada, lemma, significado, frase, usos from palavras_geradas order by usos desc;
+```
+
+Decisões:
+- **A primeira ideia foi um "cache" (Redis, chave e valor).** Troquei por um banco SQL com colunas de verdade porque o objetivo é ter um acervo permanente e consultável, não algo temporário. O mesmo banco vai receber as contas e os baralhos na próxima fase.
+- **Neon e não Supabase:** no plano gratuito do Supabase, o projeto é pausado depois de uma semana sem uso e só volta manualmente. Para um projeto de portfólio, isso significaria um recrutador encontrar o site quebrado.
+- **A chave da linha inclui a versão do prompt.** Quando o prompt melhora, as palavras passam a ser geradas de novo sozinhas, sem apagar as antigas.
+- **Só entra no banco o que passou na checagem e está na lista oficial do HSK.** Isso também evita guardar algo estranho ou pessoal que alguém digitou.
+- **"Gerar de novo" ignora o banco e substitui a versão guardada**, porque a pessoa só gera de novo quando o resultado veio ruim.
+- **O banco nunca derruba a criação:** se ele estiver fora do ar, a palavra vai para o Gemini como antes. Sem `DATABASE_URL` (por exemplo, rodando localmente sem banco), o app funciona igual.
+- **Se todas as palavras estiverem no banco, nem a chave do Gemini é necessária.**
+
+Como não dá para testar contra o Neon nos testes automáticos, o adaptador do Postgres é testado com um banco **simulado**, que registra o SQL e confere que cada valor vai para a coluna certa e volta no mesmo formato. No teste real, dois baralhos com "água, chá" repetidos mostraram `usos = 1` nas duas.
+
+---
+
 ## Próximas etapas
 - [x] Áudio de cada carta (Gemini TTS, com a voz do navegador como plano B)
 - [x] Exportação `.apkg` para o Anki
