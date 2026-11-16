@@ -279,6 +279,27 @@ O teste (`npm run testar:apkg`) ganhou 9 verificações da v2 e gera `amostra-v2
 
 ---
 
+## v2 · Módulo 1: um exemplo no prompt que virou regra, e um modelo mais forte (15/11)
+Testando a tela nova, o tema "Comida" foi recusado como "amplo demais". **A causa estava no meu prompt:** para explicar o que era um tema amplo, o exemplo que eu tinha escrito era justamente *"comida" é amplo? sugira "frutas"*. O modelo tratou o exemplo como regra. Correção (prompt v3):
+- temas amplos do dia a dia (comida, família, casa, viagem) são aceitos explicitamente; recusa só para tema sem sentido, que não é de vocabulário ("coisas") ou impróprio, com "na dúvida, aceite";
+- a recusa devolve de 2 a 3 temas sugeridos em lista, e a tela mostra cada um como link que já gera as palavras;
+- a primeira rodada trouxe sugestões como "comida: 苹果, 米饭", então o código também garante o formato: corta o que vem depois de ":" e descarta sugestões com caracteres chineses.
+
+**Troca de modelo só no Módulo 1.** O protótipo mostrou que o `flash-lite` errava a escrita (戹果 no lugar de 苹果, 西璜 no lugar de 西瓜, "maã", "pêssago") e fugia do tema no "pedir mais" (água entre as frutas). Como o Módulo 1 pede poucas palavras curtas, passei só ele para o `gemini-3.5-flash`, com o lite de reserva; o Módulo 2, que é a chamada grande, continua no lite. Com a mesma bateria de temas:
+
+| | flash-lite | 3.5-flash |
+|---|---|---|
+| Caracteres errados (pegos pela lista do HSK) | 4 em 8 palavras de "frutas" | nenhum |
+| Erros no português | "maã", "pêssago" | nenhum |
+| "Pedir mais" fora do tema | sim (水 água em frutas) | não |
+| Tempo por chamada | ~1 s | 2 a 7 s |
+
+Agora, o que aparece como "fora do HSK" são palavras corretas que só não estão na lista da prova (橙子 laranja, 牛肉 carne de boi). A regra de traduzir de novo continua valendo, por segurança. O modelo fica numa variável própria (`GEMINI_THEME_MODEL`).
+
+**Tela de novo baralho:** formulário mais largo no computador; a coluna do mandarim se ajusta à palavra mais longa (电子邮件 não quebra mais); a pill "HSK 6+" virou um ⚠ com tooltip, e palavras fora da lista aparecem normalmente; ✕ no lugar de "remover".
+
+---
+
 ## Próximas etapas
 - [x] Áudio de cada carta (Gemini TTS, com a voz do navegador como plano B)
 - [x] Exportação `.apkg` para o Anki
