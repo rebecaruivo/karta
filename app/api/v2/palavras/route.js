@@ -3,6 +3,7 @@ import { GoogleGenAI } from "@google/genai";
 import { gerarPalavras, VERSAO_PROMPT_M1 } from "@/lib/v2/modulo1.js";
 import { validarTema, LIMITES } from "@/lib/v2/portaEntrada.js";
 import { escolherChave, respostaSemChave } from "@/lib/chaveServidor";
+import { idiomaOpcional } from "@/lib/v2/idiomas.js";
 import dicionario from "@/lib/v2/dados/hsk.js";
 
 export const maxDuration = 60;
@@ -22,6 +23,10 @@ export async function POST(request) {
   const corpo = (await request.json().catch(() => ({}))) || {};
   const { tema, erro } = validarTema(corpo.theme);
   if (erro) return Response.json({ erro }, { status: 400 });
+  const cfg = idiomaOpcional(corpo.target_language);
+  if (!cfg) return Response.json({ erro: "Idioma inválido." }, { status: 400 });
+  const nivel = corpo.level || cfg.niveis[0];
+  if (!cfg.niveis.includes(nivel)) return Response.json({ erro: "Nível inválido para esse idioma." }, { status: 400 });
   const count = Number(corpo.count);
   if (!Number.isInteger(count) || count < LIMITES.minPalavras || count > LIMITES.maxPalavras) {
     return Response.json({ erro: `A quantidade precisa ser entre ${LIMITES.minPalavras} e ${LIMITES.maxPalavras}.` }, { status: 400 });
@@ -32,7 +37,7 @@ export async function POST(request) {
   let ultimo = null;
   for (const modelo of MODELOS) {
     try {
-      const r = await gerarPalavras(ai, modelo, { theme: tema, level: corpo.level || "HSK 1", count, existing_words }, { dicionario });
+      const r = await gerarPalavras(ai, modelo, { theme: tema, level: nivel, count, existing_words, target_language: cfg.codigo }, { dicionario: cfg.codigo === "zh" ? dicionario : null });
       return Response.json({ ...r, modelo, versaoPrompt: VERSAO_PROMPT_M1 });
     } catch (e) {
       const status = Number(e?.status) || 0;

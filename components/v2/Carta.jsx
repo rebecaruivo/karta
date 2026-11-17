@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from "react";
 import { facetasDe, obterRepo } from "@/lib/v2/cliente";
 import { CATALOGO_PONTES } from "@/lib/v2/pontes";
 import { obterModoAudio, usaGravacao, usaVozDoNavegador } from "@/lib/preferencias";
+import { idiomaV2, leituraDe, textoParaVoz } from "@/lib/v2/idiomas.js";
 
 const PONTE = Object.fromEntries(CATALOGO_PONTES.map((p) => [p.id, p]));
 const parar = (e) => e.stopPropagation(); // clicar num botão não vira a carta
@@ -21,7 +22,7 @@ const IconeSom = () => (<svg width="20" height="20" viewBox="0 0 24 24" fill="no
 // gravação do Gemini, voz do navegador, ou gravação com a voz do navegador como reserva.
 // "Lenta" toca o MESMO áudio a 0,7× (decisão: não gerar um segundo arquivo).
 // Devolve false quando não há som possível (modo "só a cota" sem gravação).
-async function tocar(faceta, texto, lenta, aoTerminar) {
+async function tocar(faceta, texto, lenta, aoTerminar, codigoVoz) {
   const velocidade = lenta ? 0.7 : 1;
   const modo = obterModoAudio();
   try {
@@ -40,7 +41,7 @@ async function tocar(faceta, texto, lenta, aoTerminar) {
   if (!usaVozDoNavegador(modo)) { aoTerminar(); return false; }
   if (typeof window === "undefined" || !("speechSynthesis" in window)) { aoTerminar(); return false; }
   const fala = new SpeechSynthesisUtterance(texto);
-  fala.lang = "zh-CN";
+  fala.lang = codigoVoz;
   fala.rate = 0.9 * velocidade;
   fala.onend = aoTerminar;
   fala.onerror = aoTerminar;
@@ -49,10 +50,10 @@ async function tocar(faceta, texto, lenta, aoTerminar) {
   return true;
 }
 
-function BotaoPlay({ faceta, texto, lenta = false, autoTocar = false }) {
+function BotaoPlay({ faceta, texto, lenta = false, autoTocar = false, codigoVoz }) {
   const [tocando, setTocando] = useState(false);
   const [semSom, setSemSom] = useState(false);
-  const play = async () => { setTocando(true); setSemSom(!(await tocar(faceta, texto, lenta, () => setTocando(false)))); };
+  const play = async () => { setTocando(true); setSemSom(!(await tocar(faceta, texto, lenta, () => setTocando(false), codigoVoz))); };
   useEffect(() => { if (autoTocar) play(); }, [autoTocar]); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <span style={{ display: "grid", justifyItems: "center", gap: 6 }}>
@@ -64,10 +65,18 @@ function BotaoPlay({ faceta, texto, lenta = false, autoTocar = false }) {
   );
 }
 
-function BotaoOuvirFrase({ faceta, texto }) {
+function BotaoOuvirFrase({ faceta, texto, codigoVoz }) {
   return (
-    <button className="v2-tb" onClick={(e) => { parar(e); tocar(faceta, texto, false, () => {}); }}>
+    <button className="v2-tb" onClick={(e) => { parar(e); tocar(faceta, texto, false, () => {}, codigoVoz); }}>
       <IconeSom /> Ouvir frase
+    </button>
+  );
+}
+
+function BotaoOuvirPalavra({ faceta, texto, codigoVoz }) {
+  return (
+    <button className="v2-tb" onClick={(e) => { parar(e); tocar(faceta, texto, false, () => {}, codigoVoz); }}>
+      <IconeSom /> Ouvir
     </button>
   );
 }
@@ -91,12 +100,12 @@ function Dica({ rotulo, texto }) {
 }
 
 // Frase com a palavra destacada ou com a lacuna, a partir de cloze_indices [início, fim)
-function Frase({ sentence, modo, tamanho = 30 }) {
+function Frase({ sentence, modo, tamanho = 30, cfg }) {
   const chars = Array.from(sentence.value);
   const [ini, fim] = sentence.metadata?.cloze_indices || [0, 0];
   const meio = chars.slice(ini, fim).join("");
   return (
-    <p className="v2-cjk" lang="zh" style={{ fontSize: tamanho, margin: 0 }}>
+    <p className={cfg.escritaPropria ? "v2-cjk" : ""} lang={cfg.codigoVoz} style={{ fontSize: tamanho, margin: 0 }}>
       {chars.slice(0, ini).join("")}
       {modo === "lacuna" ? <span className="v2-bl" aria-label="lacuna" /> : <mark>{meio}</mark>}
       {chars.slice(fim).join("")}
@@ -104,43 +113,55 @@ function Frase({ sentence, modo, tamanho = 30 }) {
   );
 }
 
-const Hanzi = ({ texto, tamanho = 72 }) => (<span className="v2-cjk" lang="zh" style={{ fontSize: tamanho, lineHeight: 1 }}>{texto}</span>);
+const Escrita = ({ texto, tamanho = 72, cfg }) => (
+  <span className={cfg.escritaPropria ? "v2-cjk" : ""} lang={cfg.codigoVoz} style={{ fontSize: tamanho, lineHeight: 1 }}>{texto}</span>
+);
 const Significado = ({ texto }) => (<h2 className="v2-h" style={{ margin: 0, fontSize: 44, fontWeight: 600, lineHeight: 1.1 }}>{texto}</h2>);
 
-function Faces({ ponte, f, virada, lenta, setLenta, auto, comAudio }) {
+function Faces({ ponte, f, virada, lenta, setLenta, auto, comAudio, cfg }) {
   const { word, meaning, sentence, audioPalavra, audioFrase } = f;
-  const pinyin = word.metadata?.pinyin;
+  const leitura = leituraDe(word.metadata);
+  const leituraFrase = leituraDe(sentence.metadata);
+  const temLeitura = cfg.temLeitura && Boolean(leitura);
+  const textoPalavra = textoParaVoz(word.value, word.metadata, cfg);
+  const textoFrase = textoParaVoz(sentence.value, sentence.metadata, cfg);
+  const ouvir = comAudio && audioPalavra ? <BotaoOuvirPalavra faceta={audioPalavra} texto={textoPalavra} codigoVoz={cfg.codigoVoz} /> : null;
+  const ouvirFrase = comAudio && audioFrase ? <BotaoOuvirFrase faceta={audioFrase} texto={textoFrase} codigoVoz={cfg.codigoVoz} /> : null;
+  const pronuncia = temLeitura
+    ? <p className="v2-sub" lang={cfg.codigoVoz} style={{ fontSize: 20, margin: 0 }}>{leitura}</p>
+    : ouvir;
+
   switch (ponte) {
     case "AUDIO_TO_WORD": return {
-      frente: { centro: <BotaoPlay faceta={audioPalavra} texto={word.value} autoTocar={auto && !virada} /> },
-      verso: { centro: <><Hanzi texto={word.value} tamanho={64} /><p style={{ fontSize: 20, margin: 0 }}>{pinyin}</p></>, base: <Dica rotulo="Ver tradução" texto={meaning.value} /> },
+      frente: { centro: <BotaoPlay faceta={audioPalavra} texto={textoPalavra} autoTocar={auto && !virada} codigoVoz={cfg.codigoVoz} /> },
+      verso: { centro: <><Escrita texto={word.value} tamanho={64} cfg={cfg} />{pronuncia}</>, base: <Dica rotulo="Ver tradução" texto={meaning.value} /> },
     };
     case "AUDIO_TO_MEANING": return {
-      frente: { centro: <BotaoPlay faceta={audioPalavra} texto={word.value} autoTocar={auto && !virada} /> },
-      verso: { centro: <><Significado texto={meaning.value} /><p className="v2-cjk v2-sub" style={{ fontSize: 20, margin: 0 }}>{word.value} · {pinyin}</p></> },
+      frente: { centro: <BotaoPlay faceta={audioPalavra} texto={textoPalavra} autoTocar={auto && !virada} codigoVoz={cfg.codigoVoz} /> },
+      verso: { centro: <><Significado texto={meaning.value} /><p className={`v2-sub ${cfg.escritaPropria ? "v2-cjk" : ""}`} lang={cfg.codigoVoz} style={{ fontSize: 20, margin: 0 }}>{word.value}{temLeitura ? ` · ${leitura}` : ""}</p>{!temLeitura && ouvir}</> },
     };
     case "WORD_TO_AUDIO": return {
-      frente: { centro: <Hanzi texto={word.value} /> },
-      verso: { centro: <BotaoPlay faceta={audioPalavra} texto={word.value} autoTocar={auto && virada} />, base: <span className="v2-sub" style={{ fontSize: 17 }}>{pinyin}</span> },
+      frente: { centro: <Escrita texto={word.value} cfg={cfg} /> },
+      verso: { centro: <BotaoPlay faceta={audioPalavra} texto={textoPalavra} autoTocar={auto && virada} codigoVoz={cfg.codigoVoz} />, base: pronuncia },
     };
     case "MEANING_TO_SENTENCE": return {
       frente: { centro: <p className="v2-h" style={{ fontSize: 30, fontWeight: 500, margin: 0 }}>{sentence.metadata.translation}</p> },
-      verso: { centro: <><Frase sentence={sentence} modo="destaque" /><p className="v2-sub" style={{ fontSize: 16, margin: 0 }}>{sentence.metadata.pinyin}</p></>, base: comAudio && <BotaoOuvirFrase faceta={audioFrase} texto={sentence.value} /> },
+      verso: { centro: <><Frase sentence={sentence} modo="destaque" cfg={cfg} />{leituraFrase && <p className="v2-sub" lang={cfg.codigoVoz} style={{ fontSize: 16, margin: 0 }}>{leituraFrase}</p>}</>, base: ouvirFrase },
     };
     case "SENTENCE_AUDIO_TO_SENTENCE": return {
       frente: {
-        centro: <BotaoPlay key={lenta ? "lenta" : "normal"} faceta={audioFrase} texto={sentence.value} lenta={lenta} autoTocar={auto && !virada} />,
+        centro: <BotaoPlay key={lenta ? "lenta" : "normal"} faceta={audioFrase} texto={textoFrase} lenta={lenta} autoTocar={auto && !virada} codigoVoz={cfg.codigoVoz} />,
         base: (<div className="v2-sg" onClick={parar}><button className={lenta ? "" : "on"} onClick={() => setLenta(false)}>Normal</button><button className={lenta ? "on" : ""} onClick={() => setLenta(true)}>Lenta</button></div>),
       },
-      verso: { centro: <><Frase sentence={sentence} modo="destaque" tamanho={28} /><p className="v2-sub" style={{ fontSize: 15, margin: 0 }}>{sentence.metadata.pinyin}</p></>, base: <Dica rotulo="Ver tradução" texto={sentence.metadata.translation} /> },
+      verso: { centro: <><Frase sentence={sentence} modo="destaque" tamanho={28} cfg={cfg} />{leituraFrase && <p className="v2-sub" lang={cfg.codigoVoz} style={{ fontSize: 15, margin: 0 }}>{leituraFrase}</p>}</>, base: <Dica rotulo="Ver tradução" texto={sentence.metadata.translation} /> },
     };
     case "CLOZE_SENTENCE_TO_WORD": return {
-      frente: { centro: <><Frase sentence={sentence} modo="lacuna" /><p className="v2-sub" style={{ fontSize: 17, margin: 0 }}>{sentence.metadata.translation}</p></> },
-      verso: { centro: <><Frase sentence={sentence} modo="destaque" /><p className="v2-sub" style={{ fontSize: 16, margin: 0 }}><span className="v2-cjk">{word.value}</span> · {pinyin} · {meaning.value}</p></>, base: comAudio && <BotaoOuvirFrase faceta={audioFrase} texto={sentence.value} /> },
+      frente: { centro: <><Frase sentence={sentence} modo="lacuna" cfg={cfg} /><p className="v2-sub" style={{ fontSize: 17, margin: 0 }}>{sentence.metadata.translation}</p></> },
+      verso: { centro: <><Frase sentence={sentence} modo="destaque" cfg={cfg} /><p className="v2-sub" style={{ fontSize: 16, margin: 0 }}><span className={cfg.escritaPropria ? "v2-cjk" : ""} lang={cfg.codigoVoz}>{word.value}</span>{temLeitura ? ` · ${leitura}` : ""} · {meaning.value}</p>{!temLeitura && ouvir}</>, base: ouvirFrase },
     };
     case "WORD_TO_MEANING": return {
-      frente: { centro: <Hanzi texto={word.value} /> },
-      verso: { centro: <><Significado texto={meaning.value} /><p className="v2-sub" style={{ fontSize: 16, margin: 0 }}>{word.metadata?.pos}</p></> },
+      frente: { centro: <Escrita texto={word.value} cfg={cfg} /> },
+      verso: { centro: <><Significado texto={meaning.value} /><p className="v2-sub" style={{ fontSize: 16, margin: 0 }}>{word.metadata?.pos}</p>{!temLeitura && ouvir}</> },
     };
     default: return { frente: { centro: "?" }, verso: { centro: "?" } };
   }
@@ -150,8 +171,9 @@ function Faces({ ponte, f, virada, lenta, setLenta, auto, comAudio }) {
 // comAudio=false: baralho sem exercícios de áudio; somem também os botões "Ouvir frase" do verso
 export default function Carta({ ponte, palavra, virada, aoVirar, autoTocar = true, comAudio = true }) {
   const [lenta, setLenta] = useState(false);
+  const cfg = idiomaV2(palavra.concept.language);
   const f = facetasDe(palavra);
-  const { frente, verso } = Faces({ ponte, f, virada, lenta, setLenta, auto: autoTocar, comAudio });
+  const { frente, verso } = Faces({ ponte, f, virada, lenta, setLenta, auto: autoTocar, comAudio, cfg });
   const instrucao = PONTE[ponte]?.instruction;
   const face = (lado, conteudo, oculta) => (
     <div className={`v2-face ${lado} v2-mc`} aria-hidden={oculta}>

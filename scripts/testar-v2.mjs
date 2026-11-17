@@ -1,5 +1,6 @@
 // Testes automáticos das partes da v2 que não dependem da IA.
 // Uso: npm run testar:v2
+import { existsSync, readFileSync } from "node:fs";
 import { lerPalavras, validarTema } from "../lib/v2/portaEntrada.js";
 import { limparLista, montarPedido as pedidoM1, conferirNoHSK } from "../lib/v2/modulo1.js";
 import { montarPedido as pedidoM2, enriquecer } from "../lib/v2/modulo2.js";
@@ -12,7 +13,9 @@ import { criarRepositorio } from "../lib/v2/banco.js";
 import { adaptadorMemoria, adaptadorIndexedDB, adaptadorServidor, adaptadorMisto } from "../lib/v2/adaptadores.js";
 import { TABELAS, montarSQL, paraLinha, paraRegistro, executar, reiniciarEsquema } from "../lib/v2/dadosServidor.js";
 import { podeGerarAudio, usaGravacao, usaVozDoNavegador } from "../lib/preferencias.js";
-import { calcularLacuna, fraseComLacuna, validarMandarim, montarPalavraEnriquecida, capitalizarPinyin, alertas } from "../lib/v2/facetas.js";
+import { calcularLacuna, fraseComLacuna, validarMandarim, validarIdioma, montarPalavraEnriquecida, capitalizarPinyin, alertas } from "../lib/v2/facetas.js";
+import { IDIOMAS_V2, IDIOMAS_V2_LISTA, idiomaV2, textoParaVoz, leituraDe } from "../lib/v2/idiomas.js";
+import { instrucaoDoSistema as instrucaoM2 } from "../lib/v2/modulo2.js";
 
 let falhas = 0;
 const conferir = (ok, msg) => { console.log(`${ok ? "✓" : "✗"} ${msg}`); if (!ok) falhas++; };
@@ -373,6 +376,45 @@ try {
   if (e?.code === "ERR_MODULE_NOT_FOUND") console.log("\n(IndexedDB simulado não instalado: rode npm install para testar também o adaptador do navegador)");
   else throw e;
 }
+
+console.log("\n— Perfis de idioma da v2");
+conferir(IDIOMAS_V2_LISTA.length === 5 && IDIOMAS_V2_LISTA.map((i) => i.codigo).join() === "zh,ja,en,fr,es", "cinco perfis: mandarim, japonês, inglês, francês e espanhol");
+conferir(idiomaV2("mandarim").codigo === "zh" && idiomaV2("fr").codigo === "fr", "aceita o código ISO e a chave da configuração antiga");
+conferir(idiomaV2("zh").niveis[0] === "HSK 1" && idiomaV2("ja").niveis[0] === "N5" && idiomaV2("fr").niveis[0] === "A1", "níveis por idioma: HSK, JLPT e CEFR");
+conferir(idiomaV2("zh").temLeitura && idiomaV2("ja").temLeitura && !idiomaV2("en").temLeitura && !idiomaV2("fr").temLeitura && !idiomaV2("es").temLeitura, "leitura escrita só no mandarim e no japonês");
+conferir(idiomaV2("zh").codigoTts === "zh_CN" && idiomaV2("ja").codigoTts === "ja_JP" && idiomaV2("fr").codigoTts === "fr_FR", "código de voz do Anki por idioma");
+
+console.log("\n— Escrita e leitura por idioma");
+conferir(igual(lerPalavras("la pomme, look for, la manzana", { target_language: "fr", level: "A1" }).wordList.words.map((w) => w.gloss), ["la pomme", "look for", "la manzana"]), "porta de entrada aceita palavras com espaço (artigo e phrasal verb)");
+const validacaoLatina = (extra = {}) => validarIdioma({ lemma: "la pomme", pos: "substantivo", meaning: "maçã", sentence: "Je mange la pomme.", target_in_sentence: "la pomme", sentence_translation: "Eu como a maçã.", ambiguous: false, other_senses: "", level_fit: true, note: "", ...extra }, idiomaV2("fr"));
+conferir(validacaoLatina().length === 0, "francês · palavra com artigo e frase sem leitura passam sem problemas");
+conferir(validacaoLatina({ sentence: "Je mange la pomme avec mon ami dans la cuisine de ma mère aujourd'hui." }).some((p) => p.includes("12 palavras")), "francês · frase com mais de 12 palavras é recusada");
+const japonesa = { lemma: "たべる", leitura: "たべる (taberu)", pos: "verbo", meaning: "comer", sentence: "パンを食べます。", target_in_sentence: "食べます", frase_leitura: "パンをたべます。", sentence_translation: "Eu como pão.", ambiguous: false, other_senses: "", level_fit: true, note: "" };
+conferir(validarIdioma(japonesa, idiomaV2("ja")).length === 0, "japonês · leitura em hiragana + romaji passa");
+conferir(validarIdioma({ ...japonesa, leitura: "" }, idiomaV2("ja")).some((p) => p.includes("sem leitura")), "japonês · sem leitura é recusado");
+const enriquecidaFrancesa = montarPalavraEnriquecida({ id: "w1", gloss: "maçã" }, { lemma: "la pomme", pos: "substantivo", meaning: "maçã", sentence: "Je mange la pomme.", target_in_sentence: "la pomme", sentence_translation: "Eu como a maçã.", ambiguous: false, other_senses: "", level_fit: true, note: "" }, { deck_id: "d1", language: "fr", origin: "user" });
+conferir(!("leitura" in enriquecidaFrancesa.facets[0].metadata) && !("leitura" in enriquecidaFrancesa.facets[2].metadata), "francês · a palavra e a frase não têm faceta de leitura");
+const enriquecidaJaponesa = montarPalavraEnriquecida({ id: "w1", gloss: "comer" }, japonesa, { deck_id: "d1", language: "ja", origin: "user" });
+conferir(enriquecidaJaponesa.facets[0].metadata.leitura === "たべる (taberu)" && enriquecidaJaponesa.facets[2].metadata.leitura === "パンをたべます。", "japonês · leitura fica no metadata da palavra e da frase");
+conferir(leituraDe({ pinyin: "shuǐ" }) === "shuǐ" && leituraDe({ leitura: "みず" }) === "みず", "leituraDe lê o formato antigo (pinyin) e o novo (leitura)");
+conferir(textoParaVoz("水", { leitura: "みず (mizu)" }, idiomaV2("ja")) === "みず" && textoParaVoz("みず", {}, idiomaV2("ja")) === "みず" && textoParaVoz("la pomme", {}, idiomaV2("fr")) === "la pomme", "japonês com kanji vai para a voz como hiragana; os outros idiomas mantêm o texto");
+
+console.log("\n— Prompts por idioma");
+const promptFrances = instrucaoM2(idiomaV2("fr"));
+const promptJapones = instrucaoM2(idiomaV2("ja"));
+conferir(!promptFrances.includes('"leitura"') && promptFrances.includes("12 palavras") && promptFrances.includes("artigo definido"), "prompt do francês não pede leitura, limita a 12 palavras e mantém o artigo");
+conferir(promptJapones.includes('"leitura"') && promptJapones.includes("hiragana") && promptJapones.includes("20 caracteres"), "prompt do japonês pede hiragana + romaji e limita a 20 caracteres");
+conferir(pedidoM2([{ id: "w1", gloss: "maçã", lemma: "la pomme" }], "A1", "fr").includes("(em francês: la pomme)"), "Módulo 2 recebe a palavra já escolhida no idioma certo");
+const hskNaoMandarim = conferirNoHSK([{ lemma: "la pomme", gloss: "maçã" }], { "la pomme": 1 }, "A1", "fr");
+conferir(hskNaoMandarim[0].lemma === "la pomme" && !("hsk" in hskNaoMandarim[0]), "a checagem do HSK não se aplica aos outros idiomas");
+
+console.log("\n— Baralho de exemplo da v2");
+const demo = JSON.parse(readFileSync(new URL("../public/demo-v2/baralho.json", import.meta.url), "utf8"));
+const idsDemo = new Set(demo.palavras.flatMap((p) => p.facets.map((f) => f.id)));
+conferir(demo.deck.target_language === "zh" && demo.deck.level === "HSK 2" && demo.palavras.length === 6, "demo em mandarim HSK 2 com 6 palavras");
+conferir(demo.palavras.every((p) => p.facets.length === 5 && p.facets[0].facet_type === "WORD" && p.facets[2].metadata.cloze_indices), "cada palavra do demo tem as 5 facetas e a lacuna calculada");
+conferir(demo.palavras.every((p) => Object.keys(p.audios).every((id) => idsDemo.has(id))), "os áudios apontam para facetas existentes");
+conferir(demo.palavras.flatMap((p) => Object.values(p.audios)).every((a) => existsSync(new URL(`../public/demo-v2/${a}`, import.meta.url))), "todos os arquivos de áudio do demo existem");
 
 console.log(falhas ? `\n${falhas} teste(s) falharam.` : "\nTodos os testes passaram.");
 process.exit(falhas ? 1 : 0);

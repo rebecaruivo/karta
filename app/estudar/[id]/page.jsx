@@ -52,8 +52,8 @@ export default function EstudarV2() {
   });
 
   if (dados === undefined) return null;
-  if (dados === null) return <p>Baralho não encontrado. <Link href="/v2">Voltar</Link></p>;
-  const voltar = `/v2/baralho/${id}`;
+  if (dados === null) return <p>Baralho não encontrado. <Link href="/">Voltar</Link></p>;
+  const voltar = `/baralho/${id}`;
 
   if (!fila.length) {
     return (

@@ -1,0 +1,443 @@
+{
+ "deck": {
+  "name": "Comida (exemplo)",
+  "creation_mode": "theme",
+  "theme": "Comida (exemplo)",
+  "target_language": "zh",
+  "level": "HSK 2",
+  "facetas_opcionais": [
+   "AUDIO"
+  ],
+  "pipeline_status": "cards_ready",
+  "modelo": "exemplo",
+  "versao_prompt": 4
+ },
+ "palavras": [
+  {
+   "concept": {
+    "id": "demo-v2-1-c",
+    "language": "zh",
+    "origin": "user",
+    "sense_hint": null,
+    "gloss": "peixe"
+   },
+   "facets": [
+    {
+     "id": "demo-v2-1-word",
+     "facet_type": "WORD",
+     "value": "鱼",
+     "metadata": {
+      "leitura": "yú",
+      "pos": "substantivo",
+      "level_fit": true
+     },
+     "status": "ready",
+     "edited_by_user": false
+    },
+    {
+     "id": "demo-v2-1-meaning",
+     "facet_type": "MEANING",
+     "value": "peixe",
+     "metadata": {
+      "ambiguous": false,
+      "other_senses": null
+     },
+     "status": "ready",
+     "edited_by_user": false
+    },
+    {
+     "id": "demo-v2-1-sentence",
+     "facet_type": "SENTENCE",
+     "value": "我最喜欢吃鱼。",
+     "metadata": {
+      "leitura": "Wǒ zuì xǐhuan chī yú.",
+      "translation": "O que eu mais gosto de comer é peixe.",
+      "cloze_indices": [
+       5,
+       6
+      ]
+     },
+     "status": "ready",
+     "edited_by_user": false
+    },
+    {
+     "id": "demo-v2-1-audio-word",
+     "facet_type": "AUDIO",
+     "parent_facet_id": "demo-v2-1-word",
+     "value": null,
+     "metadata": {},
+     "status": "pending",
+     "edited_by_user": false
+    },
+    {
+     "id": "demo-v2-1-audio-sentence",
+     "facet_type": "AUDIO",
+     "parent_facet_id": "demo-v2-1-sentence",
+     "value": null,
+     "metadata": {},
+     "status": "pending",
+     "edited_by_user": false
+    }
+   ],
+   "audios": {
+    "demo-v2-1-audio-word": "audio/demo-v2-1-c-palavra.wav",
+    "demo-v2-1-audio-sentence": "audio/demo-v2-1-c-frase.wav"
+   }
+  },
+  {
+   "concept": {
+    "id": "demo-v2-2-c",
+    "language": "zh",
+    "origin": "user",
+    "sense_hint": null,
+    "gloss": "carne de carneiro"
+   },
+   "facets": [
+    {
+     "id": "demo-v2-2-word",
+     "facet_type": "WORD",
+     "value": "羊肉",
+     "metadata": {
+      "leitura": "yángròu",
+      "pos": "substantivo",
+      "level_fit": true
+     },
+     "status": "ready",
+     "edited_by_user": false
+    },
+    {
+     "id": "demo-v2-2-meaning",
+     "facet_type": "MEANING",
+     "value": "carne de carneiro",
+     "metadata": {
+      "ambiguous": false,
+      "other_senses": null
+     },
+     "status": "ready",
+     "edited_by_user": false
+    },
+    {
+     "id": "demo-v2-2-sentence",
+     "facet_type": "SENTENCE",
+     "value": "这里的羊肉很好吃。",
+     "metadata": {
+      "leitura": "Zhèlǐ de yángròu hěn hǎochī.",
+      "translation": "A carne de carneiro daqui é muito gostosa.",
+      "cloze_indices": [
+       3,
+       5
+      ]
+     },
+     "status": "ready",
+     "edited_by_user": false
+    },
+    {
+     "id": "demo-v2-2-audio-word",
+     "facet_type": "AUDIO",
+     "parent_facet_id": "demo-v2-2-word",
+     "value": null,
+     "metadata": {},
+     "status": "pending",
+     "edited_by_user": false
+    },
+    {
+     "id": "demo-v2-2-audio-sentence",
+     "facet_type": "AUDIO",
+     "parent_facet_id": "demo-v2-2-sentence",
+     "value": null,
+     "metadata": {},
+     "status": "pending",
+     "edited_by_user": false
+    }
+   ],
+   "audios": {
+    "demo-v2-2-audio-word": "audio/demo-v2-2-c-palavra.wav",
+    "demo-v2-2-audio-sentence": "audio/demo-v2-2-c-frase.wav"
+   }
+  },
+  {
+   "concept": {
+    "id": "demo-v2-3-c",
+    "language": "zh",
+    "origin": "user",
+    "sense_hint": null,
+    "gloss": "leite"
+   },
+   "facets": [
+    {
+     "id": "demo-v2-3-word",
+     "facet_type": "WORD",
+     "value": "牛奶",
+     "metadata": {
+      "leitura": "niúnǎi",
+      "pos": "substantivo",
+      "level_fit": true
+     },
+     "status": "ready",
+     "edited_by_user": false
+    },
+    {
+     "id": "demo-v2-3-meaning",
+     "facet_type": "MEANING",
+     "value": "leite",
+     "metadata": {
+      "ambiguous": false,
+      "other_senses": null
+     },
+     "status": "ready",
+     "edited_by_user": false
+    },
+    {
+     "id": "demo-v2-3-sentence",
+     "facet_type": "SENTENCE",
+     "value": "早上我喝了一杯牛奶。",
+     "metadata": {
+      "leitura": "Zǎoshang wǒ hēle yì bēi niúnǎi.",
+      "translation": "De manhã tomei um copo de leite.",
+      "cloze_indices": [
+       7,
+       9
+      ]
+     },
+     "status": "ready",
+     "edited_by_user": false
+    },
+    {
+     "id": "demo-v2-3-audio-word",
+     "facet_type": "AUDIO",
+     "parent_facet_id": "demo-v2-3-word",
+     "value": null,
+     "metadata": {},
+     "status": "pending",
+     "edited_by_user": false
+    },
+    {
+     "id": "demo-v2-3-audio-sentence",
+     "facet_type": "AUDIO",
+     "parent_facet_id": "demo-v2-3-sentence",
+     "value": null,
+     "metadata": {},
+     "status": "pending",
+     "edited_by_user": false
+    }
+   ],
+   "audios": {
+    "demo-v2-3-audio-word": "audio/demo-v2-3-c-palavra.wav",
+    "demo-v2-3-audio-sentence": "audio/demo-v2-3-c-frase.wav"
+   }
+  },
+  {
+   "concept": {
+    "id": "demo-v2-4-c",
+    "language": "zh",
+    "origin": "user",
+    "sense_hint": null,
+    "gloss": "ovo"
+   },
+   "facets": [
+    {
+     "id": "demo-v2-4-word",
+     "facet_type": "WORD",
+     "value": "鸡蛋",
+     "metadata": {
+      "leitura": "jīdàn",
+      "pos": "substantivo",
+      "level_fit": true
+     },
+     "status": "ready",
+     "edited_by_user": false
+    },
+    {
+     "id": "demo-v2-4-meaning",
+     "facet_type": "MEANING",
+     "value": "ovo",
+     "metadata": {
+      "ambiguous": false,
+      "other_senses": null
+     },
+     "status": "ready",
+     "edited_by_user": false
+    },
+    {
+     "id": "demo-v2-4-sentence",
+     "facet_type": "SENTENCE",
+     "value": "你想吃几个鸡蛋？",
+     "metadata": {
+      "leitura": "Nǐ xiǎng chī jǐ gè jīdàn?",
+      "translation": "Quantos ovos você quer comer?",
+      "cloze_indices": [
+       5,
+       7
+      ]
+     },
+     "status": "ready",
+     "edited_by_user": false
+    },
+    {
+     "id": "demo-v2-4-audio-word",
+     "facet_type": "AUDIO",
+     "parent_facet_id": "demo-v2-4-word",
+     "value": null,
+     "metadata": {},
+     "status": "pending",
+     "edited_by_user": false
+    },
+    {
+     "id": "demo-v2-4-audio-sentence",
+     "facet_type": "AUDIO",
+     "parent_facet_id": "demo-v2-4-sentence",
+     "value": null,
+     "metadata": {},
+     "status": "pending",
+     "edited_by_user": false
+    }
+   ],
+   "audios": {
+    "demo-v2-4-audio-word": "audio/demo-v2-4-c-palavra.wav",
+    "demo-v2-4-audio-sentence": "audio/demo-v2-4-c-frase.wav"
+   }
+  },
+  {
+   "concept": {
+    "id": "demo-v2-5-c",
+    "language": "zh",
+    "origin": "user",
+    "sense_hint": null,
+    "gloss": "melancia"
+   },
+   "facets": [
+    {
+     "id": "demo-v2-5-word",
+     "facet_type": "WORD",
+     "value": "西瓜",
+     "metadata": {
+      "leitura": "xīguā",
+      "pos": "substantivo",
+      "level_fit": true
+     },
+     "status": "ready",
+     "edited_by_user": false
+    },
+    {
+     "id": "demo-v2-5-meaning",
+     "facet_type": "MEANING",
+     "value": "melancia",
+     "metadata": {
+      "ambiguous": false,
+      "other_senses": null
+     },
+     "status": "ready",
+     "edited_by_user": false
+    },
+    {
+     "id": "demo-v2-5-sentence",
+     "facet_type": "SENTENCE",
+     "value": "这个西瓜很便宜。",
+     "metadata": {
+      "leitura": "Zhè ge xīguā hěn piányi.",
+      "translation": "Esta melancia está bem barata.",
+      "cloze_indices": [
+       2,
+       4
+      ]
+     },
+     "status": "ready",
+     "edited_by_user": false
+    },
+    {
+     "id": "demo-v2-5-audio-word",
+     "facet_type": "AUDIO",
+     "parent_facet_id": "demo-v2-5-word",
+     "value": null,
+     "metadata": {},
+     "status": "pending",
+     "edited_by_user": false
+    },
+    {
+     "id": "demo-v2-5-audio-sentence",
+     "facet_type": "AUDIO",
+     "parent_facet_id": "demo-v2-5-sentence",
+     "value": null,
+     "metadata": {},
+     "status": "pending",
+     "edited_by_user": false
+    }
+   ],
+   "audios": {
+    "demo-v2-5-audio-word": "audio/demo-v2-5-c-palavra.wav",
+    "demo-v2-5-audio-sentence": "audio/demo-v2-5-c-frase.wav"
+   }
+  },
+  {
+   "concept": {
+    "id": "demo-v2-6-c",
+    "language": "zh",
+    "origin": "user",
+    "sense_hint": null,
+    "gloss": "café"
+   },
+   "facets": [
+    {
+     "id": "demo-v2-6-word",
+     "facet_type": "WORD",
+     "value": "咖啡",
+     "metadata": {
+      "leitura": "kāfēi",
+      "pos": "substantivo",
+      "level_fit": true
+     },
+     "status": "ready",
+     "edited_by_user": false
+    },
+    {
+     "id": "demo-v2-6-meaning",
+     "facet_type": "MEANING",
+     "value": "café",
+     "metadata": {
+      "ambiguous": false,
+      "other_senses": null
+     },
+     "status": "ready",
+     "edited_by_user": false
+    },
+    {
+     "id": "demo-v2-6-sentence",
+     "facet_type": "SENTENCE",
+     "value": "我不喝咖啡，我喝茶。",
+     "metadata": {
+      "leitura": "Wǒ bù hē kāfēi, wǒ hē chá.",
+      "translation": "Eu não tomo café, tomo chá.",
+      "cloze_indices": [
+       3,
+       5
+      ]
+     },
+     "status": "ready",
+     "edited_by_user": false
+    },
+    {
+     "id": "demo-v2-6-audio-word",
+     "facet_type": "AUDIO",
+     "parent_facet_id": "demo-v2-6-word",
+     "value": null,
+     "metadata": {},
+     "status": "pending",
+     "edited_by_user": false
+    },
+    {
+     "id": "demo-v2-6-audio-sentence",
+     "facet_type": "AUDIO",
+     "parent_facet_id": "demo-v2-6-sentence",
+     "value": null,
+     "metadata": {},
+     "status": "pending",
+     "edited_by_user": false
+    }
+   ],
+   "audios": {
+    "demo-v2-6-audio-word": "audio/demo-v2-6-c-palavra.wav",
+    "demo-v2-6-audio-sentence": "audio/demo-v2-6-c-frase.wav"
+   }
+  }
+ ]
+}

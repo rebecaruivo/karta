@@ -5,6 +5,7 @@ import { GoogleGenAI } from "@google/genai";
 import { enriquecer, VERSAO_PROMPT } from "@/lib/v2/modulo2.js";
 import { LIMITES } from "@/lib/v2/portaEntrada.js";
 import { escolherChave, respostaSemChave } from "@/lib/chaveServidor";
+import { idiomaOpcional } from "@/lib/v2/idiomas.js";
 import dicionario from "@/lib/v2/dados/hsk.js";
 import { consultarBanco, concluirComBanco } from "@/lib/v2/bancoPalavras.js";
 import { bancoPalavrasPostgres } from "@/lib/v2/bancoPalavrasPostgres.js";
@@ -23,31 +24,34 @@ export async function POST(request) {
   if (!Array.isArray(palavras) || !palavras.length || palavras.length > LIMITES.maxPalavras) {
     return Response.json({ erro: `Envie de 1 a ${LIMITES.maxPalavras} palavras.` }, { status: 400 });
   }
-  if (wordList.target_language !== "zh") {
-    return Response.json({ erro: "Nesta versão, só o mandarim está disponível (perfil de referência)." }, { status: 400 });
-  }
+  const cfg = idiomaOpcional(wordList.target_language);
+  if (!cfg) return Response.json({ erro: "Idioma inválido." }, { status: 400 });
+  if (!cfg.niveis.includes(wordList.level)) return Response.json({ erro: "Nível inválido para esse idioma." }, { status: 400 });
 
-  // O lemma vem do navegador: só aceita até 8 caracteres chineses e, se a lista do HSK existir, só palavra da lista.
+  // O lemma vem do navegador: só aceita escrita válida do idioma e, no mandarim, só palavra da lista do HSK.
   // Fora disso, descarta e o Módulo 2 traduz de novo a partir do português.
+  const dicionarioDoIdioma = cfg.codigo === "zh" ? dicionario : null;
   for (const p of palavras) {
-    if (p.lemma && (!/^[\u3400-\u9fff]{1,8}$/u.test(p.lemma) || (dicionario && dicionario[p.lemma] === undefined))) p.lemma = null;
+    const chinesTamanhoOk = cfg.codigo !== "zh" || (p.lemma || "").length <= 8;
+    if (p.lemma && (!chinesTamanhoOk || !cfg.escritaRegex.test(p.lemma) || (dicionarioDoIdioma && dicionarioDoIdioma[p.lemma] === undefined))) p.lemma = null;
     if (p.origin !== "ai" && p.origin !== "user") delete p.origin;
   }
+  const lista = { ...wordList, target_language: cfg.codigo };
 
   // 1. Banco de palavras: as já geradas por alguém voltam prontas, sem gastar a cota
   let banco = null;
   try { banco = await bancoPalavrasPostgres(); } catch (e) { console.error("[banco de palavras] indisponível:", e?.message); }
   let consulta;
   try {
-    consulta = await consultarBanco(wordList, { banco, versao: VERSAO_PROMPT, ignorar: regerar });
+    consulta = await consultarBanco(lista, { banco, versao: VERSAO_PROMPT, ignorar: regerar });
   } catch (e) {
     console.error("[banco de palavras] falhou na consulta, seguindo sem ele:", e?.message);
     banco = null;
-    consulta = await consultarBanco(wordList, { banco: null, versao: VERSAO_PROMPT });
+    consulta = await consultarBanco(lista, { banco: null, versao: VERSAO_PROMPT });
   }
   const { doBanco, faltam, chaves } = consulta;
   const responder = async (resultadosIA, extras = {}) => Response.json({
-    resultados: await concluirComBanco(wordList, { doBanco, chaves, resultadosIA, banco, dicionario, versao: VERSAO_PROMPT, substituir: regerar }),
+    resultados: await concluirComBanco(lista, { doBanco, chaves, resultadosIA, banco, dicionario: dicionarioDoIdioma, versao: VERSAO_PROMPT, substituir: regerar }),
     doBanco: doBanco.size, versaoPrompt: VERSAO_PROMPT, ...extras,
   });
   if (!faltam.length) return responder([], { modelo: "banco de palavras", chamadas: [] });
@@ -59,7 +63,7 @@ export async function POST(request) {
   let ultimo = null;
   for (const modelo of MODELOS) {
     try {
-      const { resultados, chamadas } = await enriquecer(ai, modelo, { ...wordList, words: faltam });
+      const { resultados, chamadas } = await enriquecer(ai, modelo, { ...lista, words: faltam });
       return responder(resultados, { chamadas, modelo });
     } catch (e) {
       const status = Number(e?.status) || 0;

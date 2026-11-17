@@ -2,6 +2,7 @@
    Tudo com prefixo "v2-" para não interferir na v1. */
 .v2 { --v2-tinta: #0F1B2D; --v2-suave: #475569; --v2-fundo: #F3F7FF; --v2-borda: #D3DEF3; --v2-azul: #1E4FD8; --v2-azul-claro: #DCE7FF; --v2-azul-texto: #1E3A8A; }
 .v2-cjk { font-family: 'Noto Sans SC', 'Noto Sans JP', sans-serif; }
+.v2-cjk[lang="ja-JP"] { font-family: 'Noto Sans JP', 'Noto Sans SC', sans-serif; }
 .v2-h { font-family: Outfit, sans-serif; }
 .v2-sub { color: var(--v2-suave); }
 
@@ -66,7 +67,7 @@
 .v2-barra-selecao { position: sticky; bottom: 16px; z-index: 4; width: fit-content; margin: 20px auto 0; display: flex; align-items: center; gap: 20px; padding: 12px 24px; border-radius: 999px; background: var(--tinta); color: #fff; font: 600 14px Figtree, sans-serif; box-shadow: 0 8px 24px rgba(15, 27, 45, .25); }
 .v2-barra-selecao .v2-link { color: #fff; }
 /* coluna da direita mais larga (link + checkbox); no celular vale o layout da v1 */
-@media (min-width: 641px) { .v2 .lr { grid-template-columns: 120px 1fr 1.2fr 170px; } }
+@media (min-width: 641px) { .v2 .lr { grid-template-columns: 120px 1fr 1.2fr 170px; } .v2 .lr.v2-sem-leitura { grid-template-columns: 120px 1fr 170px; } }
 .v2-menu button.v2-perigo strong { color: #B42318; }
 
 /* Avisos de erro da v2: só o ícone, sem a caixa pontilhada da v1 */

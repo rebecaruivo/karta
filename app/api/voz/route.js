@@ -5,7 +5,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { pcmParaWav, removerCertificadoC2PA } from "@/lib/wav";
 import { escolherChave, respostaSemChave } from "@/lib/chaveServidor";
-import { IDIOMAS } from "@/lib/idiomas";
+import { idiomaOpcional } from "@/lib/v2/idiomas.js";
 
 export const maxDuration = 60;
 
@@ -25,7 +25,7 @@ export async function POST(request) {
   if (!chave) return respostaSemChave();
   const { texto, idioma } = (await request.json().catch(() => ({}))) || {};
   // Idioma explícito: sem ele, um kanji como 水 pode sair em mandarim
-  const codigoIdioma = IDIOMAS[idioma]?.codigoVoz;
+  const codigoIdioma = idiomaOpcional(idioma)?.codigoVoz;
   if (typeof texto !== "string" || !texto.trim() || texto.length > LIMITE_TEXTO) {
     return Response.json({ erro: `Texto inválido (1 a ${LIMITE_TEXTO} caracteres).` }, { status: 400 });
   }

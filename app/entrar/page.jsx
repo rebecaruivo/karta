@@ -15,7 +15,7 @@ export default function Entrar() {
 
   async function comGoogle() {
     setErro(null);
-    const { error } = await authClient.signIn.social({ provider: "google", callbackURL: `${window.location.origin}/v2` });
+    const { error } = await authClient.signIn.social({ provider: "google", callbackURL: window.location.origin });
     if (error) setErro(error.message || "Não consegui abrir o login do Google.");
   }
 
@@ -27,7 +27,7 @@ export default function Entrar() {
       : await authClient.signIn.email({ email: email.trim(), password: senha });
     setEnviando(false);
     if (r.error) return setErro(traduzir(r.error.message, modo));
-    window.location.href = "/v2";
+    window.location.href = "/";
   }
 
   return (
@@ -61,7 +61,7 @@ export default function Entrar() {
           ? <>Já tem conta? <button className="v2-link" onClick={() => { setModo("entrar"); setErro(null); }}>Entrar</button></>
           : <>Ainda não tem conta? <button className="v2-link" onClick={() => { setModo("criar"); setErro(null); }}>Criar conta</button></>}
       </p>
-      <p><Link href="/v2" className="mu">Continuar sem conta</Link></p>
+      <p><Link href="/" className="mu">Continuar sem conta</Link></p>
     </div>
   );
 }

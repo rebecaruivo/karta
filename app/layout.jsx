@@ -1,7 +1,8 @@
 import "./globals.css";
-import "./v2/v2.css"; // estilos compartilhados (links de texto, campos compactos) também fora da v2
+import "./v2.css";
 import Link from "next/link";
 import MenuConta from "@/components/MenuConta";
+import AvisoConta from "@/components/v2/AvisoConta";
 import { authLigado } from "@/lib/auth/server";
 
 export const metadata = {
@@ -17,15 +18,15 @@ export default function RootLayout({ children }) {
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&family=Outfit:wght@500;700&family=Noto+Serif+SC:wght@500;700&family=Noto+Sans+SC:wght@400;500;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&family=Outfit:wght@500;700&family=Noto+Serif+SC:wght@500;700&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap"
         />
       </head>
       <body>
         <header className="topo">
           <Link href="/" className="marca d">Karta</Link>
-          <nav style={{ display: "flex", gap: 20, alignItems: "center" }}><Link href="/">Biblioteca</Link><Link href="/v2">Cartas por conexão <span className="tg" style={{ fontSize: 10, padding: "2px 7px" }}>beta</span></Link><Link href="/configuracoes">Configurações</Link><MenuConta ligado={authLigado} /></nav>
+          <nav style={{ display: "flex", gap: 20, alignItems: "center" }}><Link href="/">Baralhos</Link><Link href="/configuracoes">Configurações</Link><MenuConta ligado={authLigado} /></nav>
         </header>
-        <main className="conteudo">{children}</main>
+        <main className="conteudo"><div className="v2"><AvisoConta ligado={authLigado} />{children}</div></main>
       </body>
     </html>
   );
