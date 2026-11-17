@@ -9,7 +9,8 @@ import { separarPorGloss, separarRepetidas, escritasDoBaralho } from "../lib/v2/
 import { chavePalavra, consultarBanco, concluirComBanco, bancoPalavrasMemoria } from "../lib/v2/bancoPalavras.js";
 import { bancoPalavrasPostgres, ESQUEMA } from "../lib/v2/bancoPalavrasPostgres.js";
 import { criarRepositorio } from "../lib/v2/banco.js";
-import { adaptadorMemoria, adaptadorIndexedDB } from "../lib/v2/adaptadores.js";
+import { adaptadorMemoria, adaptadorIndexedDB, adaptadorServidor, adaptadorMisto } from "../lib/v2/adaptadores.js";
+import { TABELAS, montarSQL, paraLinha, paraRegistro, executar, reiniciarEsquema } from "../lib/v2/dadosServidor.js";
 import { podeGerarAudio, usaGravacao, usaVozDoNavegador } from "../lib/preferencias.js";
 import { calcularLacuna, fraseComLacuna, validarMandarim, montarPalavraEnriquecida, capitalizarPinyin, alertas } from "../lib/v2/facetas.js";
 
@@ -304,6 +305,67 @@ async function testarRepositorio(nome, db) {
 }
 
 await testarRepositorio("memória", adaptadorMemoria());
+
+// ── Baralhos no banco (fase 2): Postgres simulado que entende o SQL gerado por dadosServidor.js
+function postgresSimulado() {
+  const tabelas = Object.fromEntries(Object.keys(TABELAS).map((t) => [t, new Map()]));
+  const comandos = [];
+  const tipo = (t, c) => TABELAS[t].colunas[c];
+  return { tabelas, comandos, query: async (texto, valores = []) => {
+    comandos.push(texto);
+    if (texto.startsWith("CREATE")) return [];
+    let m;
+    if ((m = texto.match(/^SELECT \* FROM (\w+) WHERE user_id = \$1(?: AND (\w+) = \$2)?$/))) {
+      const [, t, col] = m;
+      return [...tabelas[t].values()].filter((r) => r.user_id === valores[0] && (!col || r[col] === valores[1])).map((r) => structuredClone(r));
+    }
+    if ((m = texto.match(/^INSERT INTO (\w+) \(([^)]+)\) VALUES \(([^)]+)\)/))) {
+      const [, t, cols, marcas] = m;
+      const nomes = cols.split(", "), ms = marcas.split(", ");
+      const linha = Object.fromEntries(nomes.map((n, i) => {
+        let v = valores[i];
+        if (v !== null && ms[i].endsWith("::jsonb")) v = JSON.parse(v);
+        if (v !== null && tipo(t, n) === "data") v = new Date(v); // o Postgres devolve datas como Date
+        return [n, v];
+      }));
+      const atual = tabelas[t].get(linha.id);
+      if (atual && atual.user_id !== linha.user_id) return []; // WHERE user_id = EXCLUDED.user_id
+      tabelas[t].set(linha.id, linha);
+      return [];
+    }
+    if ((m = texto.match(/^DELETE FROM (\w+) WHERE user_id = \$1 AND id = ANY\(\$2\)$/))) {
+      for (const [id, r] of tabelas[m[1]]) if (r.user_id === valores[0] && valores[1].includes(id)) tabelas[m[1]].delete(id);
+      return [];
+    }
+    throw new Error("SQL não reconhecido pelo simulado: " + texto.slice(0, 60));
+  } };
+}
+reiniciarEsquema();
+const pgSim = postgresSimulado();
+const comoUsuario = (userId) => adaptadorServidor((pedido) => executar(pgSim, userId, structuredClone(pedido)));
+const mistoDe = (userId) => adaptadorMisto({ servidor: comoUsuario(userId), local: adaptadorMemoria(), memoria: adaptadorMemoria() });
+await testarRepositorio("servidor (Postgres simulado)", mistoDe("ana"));
+
+console.log("\n— Baralhos no banco: segurança e formato");
+conferir(pgSim.comandos.filter((c) => /^(SELECT|DELETE)/.test(c)).every((c) => c.includes("user_id = $1")), "toda leitura e remoção filtra pelo usuário da sessão");
+conferir(montarSQL("salvar", { t: "decks", userId: "ana", registro: { id: "d1", name: "x" } }).texto.includes("WHERE decks.user_id = EXCLUDED.user_id"), "a gravação só atualiza linha do mesmo usuário");
+let barrou = 0;
+try { montarSQL("todos", { t: "neon_auth.user; --", userId: "ana" }); } catch { barrou++; }
+try { montarSQL("porIndice", { t: "facets", userId: "ana", indice: "value; drop", valor: 1 }); } catch { barrou++; }
+conferir(barrou === 2, "tabela ou coluna fora da lista é recusada (sem injeção de SQL)");
+const repoAna = criarRepositorio(mistoDe("ana")); await repoAna.iniciar();
+const deckAna = await repoAna.criarBaralho({ name: "Da Ana", creation_mode: "words", target_language: "zh", level: "HSK 1" });
+await repoAna.adicionarPalavras(deckAna.id, [base("água")]);
+const repoBia = criarRepositorio(mistoDe("bia")); await repoBia.iniciar();
+conferir((await repoBia.listarBaralhos()).length === 0 && (await repoBia.carregarBaralho(deckAna.id)) === null, "outra conta não enxerga os baralhos da Ana");
+await comoUsuario("bia").salvar("decks", [{ ...deckAna, name: "invadido" }]);
+await comoUsuario("bia").remover("decks", [deckAna.id]);
+conferir((await repoAna.carregarBaralho(deckAna.id)).deck.name === "Da Ana", "outra conta não consegue sobrescrever nem apagar, mesmo sabendo o id");
+const carta = (await repoAna.carregarBaralho(deckAna.id)).cartas[0];
+conferir(typeof carta.due_at === "string" && !Number.isNaN(Date.parse(carta.due_at)), "datas voltam como texto ISO, como o app espera (o Postgres devolve Date)");
+const ida = paraLinha("facets", { id: "f1", concept_id: "c1", facet_type: "WORD", value: "水", metadata: { pinyin: "shuǐ" }, campo_novo: 42 }, "ana");
+const volta = paraRegistro("facets", Object.fromEntries(ida.nomes.map((n, i) => [n, ida.valores[i]])));
+conferir(volta.metadata.pinyin === "shuǐ" && volta.campo_novo === 42 && !("user_id" in volta), "campo sem coluna própria vai para \"extra\" e volta igual; user_id não vai para o app");
 try {
   const { indexedDB } = await import("fake-indexeddb");
   await testarRepositorio("IndexedDB simulado", adaptadorIndexedDB(`teste-${Date.now()}`, indexedDB));
