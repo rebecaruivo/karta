@@ -329,6 +329,23 @@ Como não dá para testar contra o Neon nos testes automáticos, o adaptador do 
 
 ---
 
+## v2 · Contas e baralhos no banco (17/11)
+Com o banco de palavras no ar, o passo seguinte foi tirar os baralhos do navegador. Agora quem entra na conta tem baralhos, palavras, cartas e progresso de estudo guardados no Postgres, e acessa de qualquer aparelho. Quem não entra continua usando o Karta como antes, com tudo no navegador (decisão importante para um projeto de portfólio: o recrutador testa sem criar conta).
+
+- **Login com o Neon Auth** (Google ou e-mail e senha), no mesmo Neon do banco. As contas ficam no próprio banco, no schema `neon_auth`. Sem as variáveis do login, ele fica desligado e o app funciona sem conta.
+- **O repositório da v2 não mudou.** Desde o começo, ele fala com um "adaptador" de armazenamento com cinco operações (obter, todos, por índice, salvar, remover): um para o IndexedDB e um para os testes. A fase 2 foi escrever um terceiro adaptador, que fala com o servidor (`/api/v2/dados`). Para provar que ele se comporta igual, **a mesma bateria de 22 testes do repositório roda contra um Postgres simulado**, que entende o SQL gerado. Passou de primeira.
+- **Tabelas da modelagem do CauanGS** (`concepts`, `facets`, `user_cards`) mais `decks`, agora com `user_id`. Campos sem coluna própria vão para uma coluna `extra`, para nada se perder.
+- **Segurança, com testes:** o usuário vem sempre da sessão, nunca do navegador; toda leitura e remoção filtra pelo usuário; uma gravação só atualiza uma linha se ela for do mesmo usuário (ninguém sobrescreve dado alheio, mesmo sabendo o id); nomes de tabela e coluna vêm de uma lista fixa (sem injeção de SQL).
+- **Levar para a conta:** ao entrar num navegador com baralhos locais, o Karta oferece copiá-los, com o progresso. Os IDs são mantidos, então copiar duas vezes não duplica.
+- **Limite consciente:** as gravações de áudio continuam no aparelho onde foram geradas; em outro aparelho, as cartas usam a voz do navegador.
+
+```sql
+select d.name, count(c.id) as cartas, sum(c.reps) as revisoes
+from decks d join user_cards c on c.deck_id = d.id group by d.name;
+```
+
+---
+
 ## Próximas etapas
 - [x] Áudio de cada carta (Gemini TTS, com a voz do navegador como plano B)
 - [x] Exportação `.apkg` para o Anki

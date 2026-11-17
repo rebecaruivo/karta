@@ -39,8 +39,13 @@ Modo B: suas palavras ─▶ porta de entrada ───────────�
 - **Repetição espaçada com FSRS** ([ts-fsrs](https://github.com/open-spaced-repetition/ts-fsrs)), o algoritmo que o Anki oferece desde 2023, com dados no IndexedDB do navegador.
 - **Áudio opcional por baralho**, que dá para ligar e desligar depois sem perder o histórico; em Configurações a pessoa escolhe de onde vem a voz: gravações do Gemini, voz do navegador ou as duas.
 - **Banco de palavras compartilhado** (Postgres no Neon): uma palavra gerada por alguém fica no banco e é reaproveitada por todos, sem gastar a cota do Gemini de novo.
+- **Contas (Google ou e-mail) e baralhos no banco:** com login, baralhos e progresso ficam no Postgres e aparecem em qualquer aparelho; sem login, tudo continua funcionando no navegador.
 - **Exporta para o Anki** (`.apkg`): uma nota por palavra e um tipo de cartão por conexão, com as gravações dentro do pacote e a voz do sistema do Anki como plano B.
 - **O baralho continua editável:** acrescentar palavras (digitando ou pedindo à IA), corrigir sem perder o histórico de estudo, gerar uma palavra de novo e excluir em massa.
+
+O banco de palavras visto por dentro: "água" e "chá" foram geradas uma vez e reaproveitadas por outro baralho (`usos = 1`), sem nova chamada ao Gemini.
+
+![Consulta SQL no banco de palavras](docs/screenshots/banco-palavras.png)
 
 A arquitetura foi desenhada com Gabriel Pinto ([`docs/arquitetura`](docs/arquitetura/)), sobre a modelagem de dados de CauanGS ([`docs/modelagem`](docs/modelagem/)). As decisões e o que deu errado no caminho estão no [diário](docs/processo.md).
 
@@ -60,6 +65,8 @@ Montar um baralho bom de vocabulário dá trabalho: escolher as palavras do nív
 | Pipeline de IA em etapas, com uma pessoa no meio | v2: [Módulo 1](lib/v2/modulo1.js) → revisão → [Módulo 2](lib/v2/modulo2.js) → [Módulo 3](lib/v2/pontes.js), cada um com uma responsabilidade |
 | Validar a IA com fonte externa | [`lib/v2/dados/hsk.js`](lib/v2/dados/hsk.js), gerado da lista oficial do HSK por [`scripts/baixar-hsk.mjs`](scripts/baixar-hsk.mjs) |
 | Banco de dados e custo de IA | [`lib/v2/bancoPalavras.js`](lib/v2/bancoPalavras.js) e [`bancoPalavrasPostgres.js`](lib/v2/bancoPalavrasPostgres.js): palavras já geradas vêm do Postgres em vez de uma nova chamada ao Gemini |
+| Arquitetura que permite trocar o armazenamento | [`lib/v2/adaptadores.js`](lib/v2/adaptadores.js): navegador e servidor com as mesmas operações; os mesmos testes do repositório rodam nos dois |
+| Segurança de dados por usuário | [`lib/v2/dadosServidor.js`](lib/v2/dadosServidor.js): usuário vindo da sessão, filtro em toda consulta, sem sobrescrever dado alheio, sem injeção de SQL (com testes) |
 | Protótipo antes de construir | [`scripts/prototipo-modulo2.mjs`](scripts/prototipo-modulo2.mjs) mediu qualidade, custo e tempo de dois modelos antes da escolha |
 
 ## Como funciona
@@ -103,7 +110,7 @@ Pré-requisitos: Node.js 20 ou mais novo e uma chave do Gemini ([aistudio.google
 
 ```bash
 npm install
-cp .env.example .env.local      # coloque sua chave em GEMINI_API_KEY (e, se quiser o banco de palavras, a DATABASE_URL do Neon)
+cp .env.example .env.local      # coloque sua chave em GEMINI_API_KEY (opcional: DATABASE_URL e as variáveis NEON_AUTH_* do Neon, para o banco e o login)
 npm run diagnostico             # confere a chave e mede quais modelos estão respondendo
 npm run testar:apkg             # testa a exportação para o Anki (v1 e v2)
 npm run testar:v2               # testa a v2 (porta de entrada, módulos, cartas, fila, edição, banco)
@@ -151,7 +158,7 @@ docs/
 ```
 
 ## Próximos passos
-- v2: contas (Google e e-mail) e baralhos no banco, acessíveis de qualquer aparelho
+- v2: gravações de áudio no servidor (hoje ficam no aparelho onde foram geradas)
 - v2: imagem como faceta opcional, nas mesmas regras do áudio
 
 ## Como foi feito
