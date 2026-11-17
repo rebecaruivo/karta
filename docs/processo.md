@@ -346,6 +346,45 @@ from decks d join user_cards c on c.deck_id = d.id group by d.name;
 
 ---
 
+## v2 · Cinco idiomas (17/11)
+A v2 nasceu só com mandarim. Agora ela aceita **japonês, inglês, francês e espanhol** ao lado do mandarim, e a v1 continua na raiz enquanto essa mudança é testada (fase 1; a promoção da v2 e a remoção da v1 ficam para a fase 2, com tag e documentação histórica).
+
+| Decisão | Por quê |
+|---|---|
+| Perfis em [`lib/v2/idiomas.js`](../lib/v2/idiomas.js) reaproveitando [`lib/idiomas.js`](../lib/idiomas.js) | Nome, níveis, sigla e voz já existiam desde a v1; a v2 acrescenta o que só ela usa: código ISO, formato de leitura e limite de frase |
+| Códigos ISO no dado (`zh`, `ja`, `en`, `fr`, `es`) | Os baralhos e o banco de palavras da v2 já usavam `zh`; os dados existentes e as palavras já geradas continuam valendo sem migração |
+| Mandarim com pinyin; japonês com hiragana + romaji; inglês, francês e espanhol sem pronúncia escrita | A pronúncia escrita foi pedida só para as escritas não latinas. Nos três idiomas latinos, a pronúncia é o áudio |
+| Francês e espanhol com artigo definido (“la pomme”, “la manzana”) | Ensina o gênero e mantém a regra da v1; a lacuna continua usando o trecho exato da frase, que pode estar no singular ou no plural |
+| Limite de frase por escrita: 15 caracteres no mandarim, 20 no japonês, 12 palavras nos latinos | O limite antigo (15 caracteres) foi pensado para mandarim e cortaria frases naturais em inglês, francês e espanhol |
+| A checagem oficial do HSK vale só para o mandarim | Não existe lista oficial equivalente no projeto para JLPT ou CEFR; os outros idiomas usam prompt + validação de escrita, leitura e tamanho |
+| Campo interno `leitura`, com fallback para o `pinyin` antigo | O nome “pinyin” não serve para japonês e não existe nos idiomas latinos; o fallback mantém os baralhos antigos funcionando |
+| Dois modelos de exportação para o Anki: com leitura (mandarim e japonês) e sem leitura (inglês, francês e espanhol) | No Anki os campos pertencem ao modelo de nota; “tirar” os campos exige um modelo próprio. A voz do sistema usa o idioma certo (`zh_CN`, `ja_JP`, `en_US`, `fr_FR`, `es_ES`) |
+| Japonês com kanji vai para a voz como hiragana | O kanji é o mesmo em japonês e chinês; sem a leitura, o TTS pode falar em mandarim. A regra da v1 foi trazida para a v2 |
+| Pronúncia falada nos idiomas latinos só com exercícios de áudio ligados | Sem leitura escrita, o áudio é a única pronúncia; ao desligar o áudio na criação, o formulário avisa que não haverá pronúncia |
+| Baralho de exemplo “Comida” em mandarim, com áudios | A v1 tinha um demo sem chave; a v2 agora tem o equivalente em [`public/demo-v2`](../public/demo-v2), com 6 palavras e 42 cartas |
+
+O banco de palavras compartilhado passou a valer para os cinco idiomas (a chave já incluía o idioma) e a exportação para o Anki ganhou os dois modelos. Os testes automáticos cobrem os perfis, a porta de entrada, os prompts, a validação, a leitura ausente nos latinos, a voz do japonês e os dois modelos do Anki.
+
+---
+
+## v2 · A versão oficial (17/11)
+A v2 deixou de ser beta e virou o Karta. A v1 saiu da plataforma; o código dela continua no Git, na tag `v1-final`, e ganhou uma página própria em [`docs/v1.md`](v1.md).
+
+| Decisão | Por quê |
+|---|---|
+| As telas da v2 foram para a raiz (`/`, `/novo`, `/baralho/[id]`, `/estudar/[id]`) | É a única versão que fica; o menu não precisa mais escolher entre “Biblioteca” e “Cartas por conexão” |
+| `/v2/*` e `/baralho/[id]/estudar` redirecionam para as rotas novas | Links e favoritos antigos continuam funcionando |
+| A v1 foi apagada do código, não escondida | Manter duas interfaces e dois modelos de dados dobraria a manutenção sem benefício |
+| Infraestrutura compartilhada ficou: login, configurações, chave, voz, áudio e o `v1-python/` | Só a experiência antiga de baralhos saiu; o que a v2 usa todos os dias continua |
+| Os baralhos da v1 no `localStorage` não foram migrados | O modelo é outro (uma carta por palavra, sem facetas) e a v2 tem banco próprio; a v1 fica consultável pela tag |
+| O Anki também perdeu o rótulo “v2”: modelos “Karta (cartas por conexão)”, baralho `Karta::Idioma::…` e tags sem `karta-v2` | O que a pessoa importa deve falar do produto, não da versão interna |
+| A documentação atual descreve só a v2; o diário e `docs/v1.md` preservam a história | O README é a vitrine do que existe hoje; a v1 continua registrada para quem quiser estudar as decisões anteriores |
+| O `testar:apkg` passou a testar só a v2 | Os testes da v1 saíram junto com o código; os casos de mandarim, francês e japonês cobrem os dois modelos de Anki |
+
+Nomes internos como `lib/v2`, `app/api/v2` e o banco `karta-v2` foram mantidos de propósito: mudá-los não traz benefício para quem usa e poderia perder os dados já salvos no navegador. Eles estão registrados aqui para não parecerem esquecimento.
+
+---
+
 ## Próximas etapas
 - [x] Áudio de cada carta (Gemini TTS, com a voz do navegador como plano B)
 - [x] Exportação `.apkg` para o Anki
