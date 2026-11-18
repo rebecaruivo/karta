@@ -9,6 +9,9 @@ import { lerPalavras, validarTema, LIMITES } from "@/lib/v2/portaEntrada";
 import { obterRepo } from "@/lib/v2/cliente";
 import { registrarEvento } from "@/lib/v2/eventos";
 import { cabecalhosComChave } from "@/lib/chave";
+import { obterFacetasPadrao } from "@/lib/preferencias";
+import { FACETAS_PADRAO, cartasPorPalavra } from "@/lib/v2/pontes";
+import EscolhaFacetas from "@/components/v2/EscolhaFacetas";
 import { IDIOMAS_V2_LISTA, IDIOMA_PADRAO, idiomaV2, classeEscrita } from "@/lib/v2/idiomas.js";
 
 const CHAVE_ULTIMO_IDIOMA = "karta:v2:ultimo-idioma";
@@ -32,8 +35,10 @@ export default function NovoBaralhoV2() {
   const [nome, setNome] = useState("");
   const [idioma, setIdioma] = useState(IDIOMA_PADRAO);
   const [nivel, setNivel] = useState(idiomaV2(IDIOMA_PADRAO).niveis[0]);
-  const [comAudio, setComAudio] = useState(true);
-  const cartasPorPalavra = comAudio ? 7 : 3;
+  // Facetas opcionais do baralho: começam com o padrão escolhido em Configurações
+  const [facetas, setFacetas] = useState(FACETAS_PADRAO);
+  useEffect(() => { setFacetas(obterFacetasPadrao()); }, []);
+  const porPalavra = cartasPorPalavra(facetas);
   const [etapa, setEtapa] = useState(null); // mensagem de progresso
   const [erro, setErro] = useState(null);
 
@@ -143,7 +148,7 @@ export default function NovoBaralhoV2() {
     try {
       const repo = await obterRepo();
       setEtapa("Criando o baralho…");
-      const deck = await repo.criarBaralho({ name: nome.trim() || theme || "Meu baralho", creation_mode, theme, target_language: idioma, level: nivel, facetas_opcionais: comAudio ? ["AUDIO"] : [] });
+      const deck = await repo.criarBaralho({ name: nome.trim() || theme || "Meu baralho", creation_mode, theme, target_language: idioma, level: nivel, facetas_opcionais: facetas });
       await repo.atualizarBaralho({ ...deck, pipeline_status: "facets_in_progress" });
       registrarEvento("baralho_iniciado", {
         deck_id: deck.id,
@@ -175,12 +180,10 @@ export default function NovoBaralhoV2() {
   }
 
   const caixaAudio = (
-    <label className="aviso" style={{ display: "flex", gap: 12, cursor: "pointer" }}>
-      <input type="checkbox" checked={comAudio} onChange={(e) => setComAudio(e.target.checked)} style={{ marginTop: 4 }} />
-      <span><strong>Incluir exercícios de áudio</strong><br />
-        <span className="mu">{comAudio ? "7 cartas por palavra, incluindo as de escuta e pronúncia." : "3 cartas por palavra (palavra, frase e lacuna), sem exercícios de escuta."}</span>
-      </span>
-    </label>
+    <div>
+      <span className="lb">O que cada palavra traz</span>
+      <EscolhaFacetas facetas={facetas} aoMudar={setFacetas} desabilitado={Boolean(etapa)} />
+    </div>
   );
   const seletorIdioma = (
     <div>
@@ -297,7 +300,7 @@ export default function NovoBaralhoV2() {
           {etapa ? <div className="aviso">{etapa}</div> : (
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
               <button className="btn" type="button" disabled={!wordListRevisada} onClick={() => criarBaralho(wordListRevisada, { creation_mode: "theme", theme: temaValido.tema })}>
-                Criar baralho{wordListRevisada ? ` (${wordListRevisada.words.length} palavras · até ${wordListRevisada.words.length * cartasPorPalavra} cartas)` : ""}
+                Criar baralho{wordListRevisada ? ` (${wordListRevisada.words.length} palavras · até ${wordListRevisada.words.length * porPalavra} cartas)` : ""}
               </button>
               <button type="button" className="v2-link" onClick={() => { setRevisao(null); setErro(null); }}>Voltar ao tema</button>
             </div>
@@ -329,7 +332,7 @@ export default function NovoBaralhoV2() {
           {caixaErro}
           {etapa ? <div className="aviso">{etapa}</div> : (
             <div><button className="btn" type="submit" disabled={!previa?.wordList}>
-              Criar baralho{previa?.wordList ? ` (${previa.wordList.words.length} palavras · até ${previa.wordList.words.length * cartasPorPalavra} cartas)` : ""}
+              Criar baralho{previa?.wordList ? ` (${previa.wordList.words.length} palavras · até ${previa.wordList.words.length * porPalavra} cartas)` : ""}
             </button></div>
           )}
         </form>

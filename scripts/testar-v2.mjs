@@ -4,7 +4,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { lerPalavras, validarTema } from "../lib/v2/portaEntrada.js";
 import { limparLista, montarPedido as pedidoM1, conferirNoHSK } from "../lib/v2/modulo1.js";
 import { montarPedido as pedidoM2, enriquecer } from "../lib/v2/modulo2.js";
-import { montarCartas, CATALOGO_PONTES } from "../lib/v2/pontes.js";
+import { montarCartas, CATALOGO_PONTES, facetasDoBaralho, cartasPorPalavra, FACETAS_PADRAO } from "../lib/v2/pontes.js";
 import { montarFila, espacarPalavras } from "../lib/v2/sessao.js";
 import { separarPorGloss, separarRepetidas, escritasDoBaralho } from "../lib/v2/edicao.js";
 import { chavePalavra, consultarBanco, concluirComBanco, bancoPalavrasMemoria } from "../lib/v2/bancoPalavras.js";
@@ -188,6 +188,11 @@ await registrarEventos(sqlEventos, { deviceId: uuid(), eventos: [
 ] });
 conferir(gravados.length === 2 && gravados[0][12] === '{"origem":"teste"}' && gravados[1][12] === null, "payload pequeno é gravado; payload enorme é descartado; tipo desconhecido é ignorado");
 
+console.log("\n— Facetas opcionais (frase e áudio)");
+conferir(FACETAS_PADRAO.join() === "AUDIO,SENTENCE" && cartasPorPalavra(FACETAS_PADRAO) === 7 && cartasPorPalavra(["SENTENCE"]) === 3 && cartasPorPalavra(["AUDIO"]) === 4 && cartasPorPalavra([]) === 1, "cartas por palavra: as duas = 7, só frase = 3, só áudio = 4, nenhuma = 1");
+conferir(facetasDoBaralho({ facetas_opcionais: [] }).includes("SENTENCE") && facetasDoBaralho({ facetas_opcionais: ["AUDIO"] }).length === 2, "baralho antigo (sem versão) continua com a frase ligada: nenhum baralho perde cartas");
+conferir(!facetasDoBaralho({ facetas_opcionais: ["AUDIO"], facetas_versao: 2 }).includes("SENTENCE"), "baralho novo respeita a escolha: frase desligada fica desligada");
+
 console.log("\n— Módulo 3: montagem de pontes");
 const base = (gloss, ajuste = {}) => montarPalavraEnriquecida({ id: gloss, gloss, sense_hint: null }, { ...boa, ...ajuste }, { deck_id: "d1", language: "zh", origin: "user" });
 const agua = base("água");
@@ -208,12 +213,12 @@ conferir(montarCartas([agua], { catalogo: soAtivas }).cartas.length === 1, "pont
 conferir(montarCartas([agua], { existentes: c1 }).cartas.length === 0, "rodar de novo não duplica (conceito + ponte é único)");
 
 console.log("\n— Áudio opcional no baralho (opção a)");
-const semAudio = montarCartas([agua], { facetasOpcionais: [] });
+const semAudio = montarCartas([agua], { facetasOpcionais: ["SENTENCE"] });
 conferir(semAudio.cartas.map((c) => c.bridge_template_id).sort().join() === "CLOZE_SENTENCE_TO_WORD,MEANING_TO_SENTENCE,WORD_TO_MEANING", "sem exercícios de áudio: 3 cartas (palavra → significado, significado → frase, lacuna)");
 conferir(semAudio.naoCriadas.length === 0, "as pontes de áudio não contam como \"não criadas\": estão desligadas de propósito");
-conferir(montarCartas([agua], { facetasOpcionais: ["AUDIO"] }).cartas.length === 7, "com áudio: 7 cartas");
+conferir(montarCartas([agua], { facetasOpcionais: ["AUDIO", "SENTENCE"] }).cartas.length === 7, "com áudio e frase: 7 cartas");
 const semFacetaAudio = { ...agua, facets: agua.facets.filter((f) => f.facet_type !== "AUDIO") };
-conferir(montarCartas([semFacetaAudio], { facetasOpcionais: [] }).cartas.length === 3, "o botão \"Ouvir frase\" é auxiliar: a carta de lacuna existe mesmo sem faceta de áudio");
+conferir(montarCartas([semFacetaAudio], { facetasOpcionais: ["SENTENCE"] }).cartas.length === 3, "o botão \"Ouvir frase\" é auxiliar: a carta de lacuna existe mesmo sem faceta de áudio");
 
 console.log("\n— Modo de áudio (Configurações)");
 conferir(podeGerarAudio("cota_e_navegador") && usaGravacao("cota_e_navegador") && usaVozDoNavegador("cota_e_navegador"), "cota e navegador: gera, toca a gravação e usa a voz do navegador como reserva");
@@ -311,7 +316,7 @@ async function testarRepositorio(nome, db) {
   const semAgua = await repo.carregarBaralho(deck.id);
   conferir(semAgua.palavras.length === 2 && semAgua.cartas.length === 14 && (await repo.obterAudio(audio.id)) === null, "excluir palavra remove facetas, cartas e áudio dela");
 
-  const deckSemAudio = await repo.criarBaralho({ name: "Sem áudio", creation_mode: "words", target_language: "zh", level: "HSK 1", facetas_opcionais: [] });
+  const deckSemAudio = await repo.criarBaralho({ name: "Sem áudio", creation_mode: "words", target_language: "zh", level: "HSK 1", facetas_opcionais: ["SENTENCE"] });
   const rs = await repo.adicionarPalavras(deckSemAudio.id, [base("lua")]);
   conferir(rs.cartas === 3 && (await repo.audiosPendentes(deckSemAudio.id)).length === 0, "baralho sem áudio: 3 cartas por palavra e nenhuma gravação a gerar");
   // Ligar/desligar áudio depois de criado
@@ -332,6 +337,22 @@ async function testarRepositorio(nome, db) {
   conferir(rel.reativadas === 4 && rel.criadas === 0 && volta.reps === 4 && !volta.suspended && !("suspensa_por" in volta), "ligar de novo reativa as mesmas cartas, com o histórico de estudo");
   conferir(religado.cartas.find((c) => c.id === pessoal.id).suspended === true, "carta suspensa pela pessoa continua suspensa");
   await repo.excluirBaralho(deckSemAudio.id);
+
+  // Frase opcional (18/11): regra geral de facetas
+  const deckF = await repo.criarBaralho({ name: "Facetas", creation_mode: "words", target_language: "zh", level: "HSK 1", facetas_opcionais: ["AUDIO"] });
+  const rf = await repo.adicionarPalavras(deckF.id, [base("sol")]);
+  conferir(rf.cartas === 4, "baralho novo sem frase: 4 cartas por palavra (as de áudio e Palavra → Significado)");
+  conferir((await repo.audiosPendentes(deckF.id)).length === 1, "sem frase, o áudio da frase nem entra na fila de gravações");
+  const offAudio = await repo.definirFacetas(deckF.id, { AUDIO: false });
+  conferir(offAudio.suspensas === 3 && (await repo.carregarBaralho(deckF.id)).cartas.filter((c) => !c.suspended).length === 1, "sem frase e sem áudio: sobra 1 carta (Palavra → Significado)");
+  const onFrase = await repo.definirFacetas(deckF.id, { SENTENCE: true });
+  const comFrase = await repo.carregarBaralho(deckF.id);
+  const audioFrase = comFrase.cartas.find((c) => c.bridge_template_id === "SENTENCE_AUDIO_TO_SENTENCE");
+  conferir(onFrase.criadas === 2 && !audioFrase, "ligar a frase cria as 2 cartas de frase; a de \"Áudio da frase\" ainda não, porque o áudio está desligado");
+  const onAudio = await repo.definirFacetas(deckF.id, { AUDIO: true });
+  const tudo = await repo.carregarBaralho(deckF.id);
+  conferir(onAudio.reativadas === 3 && onAudio.criadas === 1 && tudo.cartas.filter((c) => !c.suspended).length === 7, "ligar o áudio reativa as 3 de áudio e cria a que depende de áudio E frase: 7 cartas");
+  await repo.excluirBaralho(deckF.id);
 
   await repo.excluirBaralho(deck.id);
   conferir((await repo.listarBaralhos()).length === 0 && (await db.todos("facets")).length === 0 && (await db.todos("user_cards")).length === 0, "excluir baralho não deixa nada para trás");

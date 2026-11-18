@@ -1,16 +1,19 @@
 "use client";
-// Configurações: chave do Gemini do visitante
+// Configurações: chave do Gemini do visitante, modo de áudio e facetas padrão dos baralhos novos
 import { useEffect, useState } from "react";
 import { obterChave, salvarChave, removerChave } from "@/lib/chave";
-import { MODOS_AUDIO, obterModoAudio, salvarModoAudio } from "@/lib/preferencias";
+import { MODOS_AUDIO, obterModoAudio, salvarModoAudio, obterFacetasPadrao, salvarFacetasPadrao } from "@/lib/preferencias";
+import EscolhaFacetas from "@/components/v2/EscolhaFacetas";
 
 export default function Configuracoes() {
   const [valor, setValor] = useState("");
   const [salva, setSalva] = useState("");
   const [mensagem, setMensagem] = useState(null);
   const [modoAudio, setModoAudio] = useState(null);
+  const [facetas, setFacetas] = useState(null);
 
-  useEffect(() => { setSalva(obterChave()); setModoAudio(obterModoAudio()); }, []);
+  useEffect(() => { setSalva(obterChave()); setModoAudio(obterModoAudio()); setFacetas(obterFacetasPadrao()); }, []);
+  function escolherFacetas(lista) { salvarFacetasPadrao(lista); setFacetas(lista); }
 
   function escolherModo(m) { salvarModoAudio(m); setModoAudio(m); }
 
@@ -57,6 +60,10 @@ export default function Configuracoes() {
         <div><button className="btn" type="submit">Salvar chave</button></div>
       </form>
       {mensagem && <p className="mu" style={{ marginTop: 12 }}>{mensagem}</p>}
+
+      <h2 className="d" style={{ fontSize: 20, marginTop: 36 }}>Baralhos novos</h2>
+      <p className="mu" style={{ marginTop: 0 }}>O que cada palavra traz quando você cria um baralho. Dá para mudar na hora de criar e, depois, no Editar de cada baralho; os baralhos que já existem não mudam.</p>
+      {facetas && <EscolhaFacetas facetas={facetas} aoMudar={escolherFacetas} />}
 
       <h2 className="d" style={{ fontSize: 20, marginTop: 36 }}>Áudio das cartas</h2>
       <p className="mu" style={{ marginTop: 0 }}>De onde vem a voz que lê as palavras e as frases.</p>

@@ -56,7 +56,7 @@ const [fCha] = q(`select flds from notes where guid = 'karta-v2-${cha.concept.id
 conferir(fCha.includes("chá &amp; &lt;infusão&gt;"), "caracteres especiais são escapados (<, >, &)");
 conferir(v2.nomeBaralho === "Karta::Mandarim::Bebidas (HSK 1)", "nome do baralho no Anki");
 
-const semAudio = montarCartas([agua, cha], { facetasOpcionais: [] }).cartas;
+const semAudio = montarCartas([agua, cha], { facetasOpcionais: ["SENTENCE"] }).cartas;
 const v2s = await montarApkgV2({ SQL, JSZip, deck: { ...deck, id: "sem", facetas_opcionais: [] }, palavras: [agua, cha], cartas: semAudio, obterAudio: async () => wav });
 const dbS = new SQL.Database(await (await JSZip.loadAsync(v2s.bytes)).file("collection.anki2").async("uint8array"));
 const fldsS = dbS.exec("select flds from notes")[0].values.map(([f]) => f.split("\x1f"));

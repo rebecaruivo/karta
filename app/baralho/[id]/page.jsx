@@ -13,6 +13,8 @@ import { lerPalavras, LIMITES } from "@/lib/v2/portaEntrada";
 import { separarPorGloss, separarRepetidas, escritasDoBaralho } from "@/lib/v2/edicao";
 import { cabecalhosComChave } from "@/lib/chave";
 import { exportarApkgV2 } from "@/lib/v2/exportarApkg";
+import { facetasDoBaralho, cartasPorPalavra } from "@/lib/v2/pontes";
+import { resumoFacetas } from "@/components/v2/EscolhaFacetas";
 import { idiomaV2, leituraDe, classeEscrita, classeComGenero } from "@/lib/v2/idiomas.js";
 
 const MAIS_POR_VEZ = 5;
@@ -303,7 +305,10 @@ export default function BaralhoV2() {
   const cfg = idiomaV2(deck.target_language);
   const cartas = dados.cartas.filter((c) => !c.suspended); // suspensas (ex.: áudio desligado) não aparecem nem contam
   const paraEstudar = montarFila(cartas).length;
-  const comAudio = (deck.facetas_opcionais ?? ["AUDIO"]).includes("AUDIO");
+  const facetas = facetasDoBaralho(deck);
+  const comAudio = facetas.includes("AUDIO");
+  const comFrase = facetas.includes("SENTENCE");
+  const porPalavra = cartasPorPalavra(facetas);
 
   function sairDaSelecao() { setSelecionando(false); setSelecionadas(new Set()); }
   function escolher(opcao) {
@@ -344,16 +349,23 @@ export default function BaralhoV2() {
     else if (r.falhas) setAvisoAudio(`${r.falhas} gravações falharam. Clique de novo para tentar.`);
     carregar();
   }
-  async function alternarAudio() {
-    const ligar = !comAudio;
-    const texto = ligar
-      ? "Ligar os exercícios de áudio? As cartas de escuta e pronúncia voltam com o histórico que tinham, e palavras sem elas ganham as 4 cartas de áudio."
-      : `Desligar os exercícios de áudio? As 4 cartas de escuta e pronúncia de cada palavra ficam suspensas (nada é apagado).${cfg.escritaPropria ? ' O botão "Ouvir frase" some das outras cartas.' : ""} Dá para ligar de novo depois.`;
+  // Ligar/desligar uma faceta opcional (áudio ou frase) neste baralho. Nada é apagado: as cartas ficam suspensas
+  // e voltam com o histórico quando a faceta é ligada de novo.
+  const NOMES_FACETA = { AUDIO: "os exercícios de áudio", SENTENCE: "as frases de exemplo" };
+  async function alternarFaceta(tipo) {
+    const ligar = !facetas.includes(tipo);
+    const depois = ligar ? [...facetas, tipo] : facetas.filter((t) => t !== tipo);
+    const nome = NOMES_FACETA[tipo];
+    const texto = `${ligar ? "Ligar" : "Desligar"} ${nome}? ${ligar
+      ? "As cartas voltam com o histórico que tinham, e palavras sem elas ganham as cartas que faltam."
+      : "As cartas que dependem disso ficam suspensas (nada é apagado). Dá para ligar de novo depois."} O baralho passa a ter ${cartasPorPalavra(depois)} carta(s) por palavra.`;
     if (!window.confirm(texto)) return;
-    const r = await (await obterRepo()).definirAudio(deck.id, ligar);
-    setMensagem(ligar
-      ? `Exercícios de áudio ligados: ${r.reativadas} cartas reativadas${r.criadas ? ` e ${r.criadas} criadas` : ""}.`
-      : `Exercícios de áudio desligados: ${r.suspensas} cartas suspensas. As gravações continuam guardadas.`);
+    const r = await (await obterRepo()).definirFacetas(deck.id, { [tipo]: ligar });
+    const partes = [];
+    if (r.suspensas) partes.push(`${r.suspensas} cartas suspensas`);
+    if (r.reativadas) partes.push(`${r.reativadas} reativadas`);
+    if (r.criadas) partes.push(`${r.criadas} criadas`);
+    setMensagem(`${nome[0].toUpperCase()}${nome.slice(1)} ${ligar ? "ligad" : "desligad"}${tipo === "AUDIO" ? "os" : "as"}${partes.length ? `: ${partes.join(", ")}` : ""}.${!ligar && tipo === "AUDIO" ? " As gravações continuam guardadas." : ""}`);
     carregar();
   }
 
@@ -398,9 +410,13 @@ export default function BaralhoV2() {
                 <button role="menuitem" onClick={() => escolher("selecionar")} disabled={!palavras.length}>
                   <strong>Corrigir ou excluir palavras</strong><span className="mu">Selecione uma ou mais na lista</span>
                 </button>
-                <button role="menuitem" onClick={() => { setMenuEditar(false); alternarAudio(); }}>
+                <button role="menuitem" onClick={() => { setMenuEditar(false); alternarFaceta("SENTENCE"); }}>
+                  <strong>{comFrase ? "Desligar frases de exemplo" : "Ligar frases de exemplo"}</strong>
+                  <span className="mu">{comFrase ? "As cartas de frase e lacuna ficam suspensas" : "Voltam as cartas de frase e lacuna"}</span>
+                </button>
+                <button role="menuitem" onClick={() => { setMenuEditar(false); alternarFaceta("AUDIO"); }}>
                   <strong>{comAudio ? "Desligar exercícios de áudio" : "Ligar exercícios de áudio"}</strong>
-                  <span className="mu">{comAudio ? "As cartas de escuta ficam suspensas" : "Volta às 7 cartas por palavra"}</span>
+                  <span className="mu">{comAudio ? "As cartas de escuta ficam suspensas" : "Voltam as cartas de escuta e pronúncia"}</span>
                 </button>
                 <button role="menuitem" className="v2-perigo" onClick={() => { setMenuEditar(false); excluirBaralho(); }}>
                   <strong>Excluir baralho</strong><span className="mu">Apaga o baralho e todas as cartas</span>
@@ -418,10 +434,10 @@ export default function BaralhoV2() {
         </p>
       )}
       {avisoAudio && <div className="erro" style={{ marginBottom: 20 }}>{avisoAudio}</div>}
-      {!comAudio && <p className="mu" style={{ marginBottom: 16 }}>Baralho sem exercícios de áudio: 3 cartas por palavra.</p>}
+      {porPalavra < 7 && <p className="mu" style={{ marginBottom: 16 }}>Baralho {[!comFrase && "sem frases de exemplo", !comAudio && "sem exercícios de áudio"].filter(Boolean).join(" e ")}: {resumoFacetas(facetas).toLowerCase()}</p>}
 
       {mensagem && <div className="aviso" style={{ marginBottom: 16 }}>{mensagem}</div>}
-      {acrescentando && <Acrescentar deck={deck} palavras={palavras} cartasPorPalavra={comAudio ? 7 : 3} aoTerminar={terminouAcrescentar} aoFechar={() => setAcrescentando(false)} />}
+      {acrescentando && <Acrescentar deck={deck} palavras={palavras} cartasPorPalavra={porPalavra} aoTerminar={terminouAcrescentar} aoFechar={() => setAcrescentando(false)} />}
 
       {palavras.length === 0 && !acrescentando && (
         <p className="mu" style={{ margin: "24px 0" }}>Este baralho está sem palavras. Use <strong>Editar → Acrescentar palavras</strong>.</p>

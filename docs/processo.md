@@ -414,6 +414,17 @@ Uma aba própria no menu, **Progresso**, com as métricas de estudo de quem usa.
 
 ---
 
+## Facetas à escolha: frase e áudio opcionais (18/11)
+Em **Configurações → Baralhos novos**, a pessoa escolhe o que cada palavra traz: **frase de exemplo** e **áudio** viram opcionais (palavra e significado são sempre incluídos). A escolha é o **padrão dos baralhos novos**; na criação dá para mudar só para aquele baralho, e no **Editar** de cada baralho existem os dois interruptores.
+
+- **Quantas cartas:** as duas facetas = 7 por palavra; só frase = 3; só áudio = 4; nenhuma = 1 (Palavra → Significado). A contagem aparece ao lado da escolha, calculada pelo próprio catálogo de pontes (`cartasPorPalavra`), não por um número escrito na tela.
+- **Uma regra para todas as facetas:** o que antes era `definirAudio` virou `definirFacetas(deckId, {SENTENCE: false})`. Ela recalcula quais pontes o baralho permite: suspende as cartas que dependem de uma faceta desligada, reativa as que voltaram a ser permitidas (com o histórico) e cria as que faltam. Uma carta que precisa de frase **e** áudio (ouvir a frase) só volta quando as duas estão ligadas. Suspensões feitas pela pessoa não são tocadas.
+- **Baralhos antigos não mudam:** "sem áudio" antes significava "com frase". Os baralhos novos guardam `facetas_versao: 2`; os antigos, sem essa marca, continuam com a frase ligada.
+- **Por que a frase continua sendo gerada mesmo desligada:** o banco de palavras é compartilhado e a pessoa pode religar a faceta depois. Só as cartas somem; o custo de gerar é o mesmo, já que a frase sai na mesma chamada.
+- **Testes:** novos blocos em `testar:v2` (contagens 7/3/4/1, baralho legado, ligar e desligar frase e áudio em sequência até voltar às 7 cartas).
+
+---
+
 ## Próximas etapas
 - [x] Áudio de cada carta (Gemini TTS, com a voz do navegador como plano B)
 - [x] Exportação `.apkg` para o Anki

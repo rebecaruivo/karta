@@ -33,7 +33,7 @@ Modo B: suas palavras ─▶ porta de entrada ───────────�
 - **A IA é conferida por fontes externas e por código:** no mandarim, cada palavra é checada na lista oficial do HSK (o protótipo mostrou a IA trocando 西瓜 por caracteres parecidos que existem, mas estão errados); nos outros idiomas, a escrita, a leitura (quando existe) e o tamanho da frase são validados por código; a posição da lacuna é calculada pelo código, não pela IA.
 - **O Módulo 3 não usa IA:** as cartas saem de um catálogo de 7 conexões, sem custo nem variação.
 - **Repetição espaçada com FSRS** ([ts-fsrs](https://github.com/open-spaced-repetition/ts-fsrs)), o algoritmo que o Anki oferece desde 2023, com dados no IndexedDB do navegador.
-- **Áudio opcional por baralho**, que dá para ligar e desligar depois sem perder o histórico; em Configurações a pessoa escolhe de onde vem a voz: gravações do Gemini, voz do navegador ou as duas.
+- **Frase e áudio opcionais por baralho:** em Configurações a pessoa define o padrão dos baralhos novos (de 1 a 7 cartas por palavra) e, no Editar de cada baralho, liga e desliga cada um sem perder o histórico. Também em Configurações, escolhe de onde vem a voz: gravações do Gemini, voz do navegador ou as duas.
 - **Cinco idiomas com regras próprias:** mandarim (pinyin com tom), japonês (hiragana + romaji) e inglês, francês e espanhol (IPA). A palavra vem limpa, sem artigo nem pronome antes (“pomme”, “manzana”).
 - **Baralho de exemplo sem chave:** o demo “Comida” em mandarim mostra as cartas por conexão e já vem com os áudios.
 - **Banco de palavras compartilhado** (Postgres no Neon): uma palavra gerada por alguém fica no banco e é reaproveitada por todos, sem gastar a cota do Gemini de novo.
@@ -130,7 +130,7 @@ app/
   novo/page.jsx                Novo baralho
   baralho/[id]/page.jsx        Baralho e prévia das cartas
   estudar/[id]/page.jsx        Modo estudo
-  configuracoes/page.jsx       Chave do Gemini e modo de áudio
+  configuracoes/page.jsx       Chave do Gemini, modo de áudio e facetas dos baralhos novos
   entrar/page.jsx              Login e criação de conta
   api/v2/palavras/route.js     Módulo 1 (palavras a partir de um tema)
   api/v2/enriquecer/route.js   Módulo 2 (facetas)
