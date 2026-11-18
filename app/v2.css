@@ -48,7 +48,7 @@
 .v2-resp small { font-size: 12px; opacity: .7; font-weight: 500; }
 /* A prévia do baralho mostra miniaturas lado a lado; a carta do estudo é maior,
    mas as duas usam a mesma tipografia e as mesmas proporções de conteúdo. */
-.v2-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 28px; }
+.v2-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr)); gap: 28px; }
 .v2-grade .v2-mc { min-height: 280px; }
 .v2-rotulo-ponte { font: 600 16px Outfit, sans-serif; margin-bottom: 10px; display: flex; gap: 8px; align-items: center; }
 
@@ -101,3 +101,31 @@
 .v2-x { border: 0; background: none; width: 32px; height: 32px; border-radius: 8px; font-size: 16px; color: var(--suave); cursor: pointer; display: grid; place-items: center; }
 .v2-x:hover:not(:disabled) { background: var(--fundo-carta); color: var(--tinta); }
 .v2-x:disabled { opacity: .4; cursor: default; }
+
+/* ── Celular ─────────────────────────────────────────────────── */
+/* Atalhos de teclado não servem para quem só tem toque */
+@media (hover: none) and (pointer: coarse) { .v2-atalhos { display: none; } }
+@media (max-width: 640px) {
+  /* Lista do baralho: palavra e leitura na primeira linha, o resto embaixo, ocupando a largura toda */
+  .v2 .lr { grid-template-columns: auto 1fr; gap: 6px 12px; align-items: baseline; padding: 14px 4px; }
+  .v2 .lr > :nth-child(3), .v2 .lr > :nth-child(4) { grid-column: 1 / -1; }
+  .v2 .lr > .v2-col-sel { min-height: 32px; }
+  /* Menu Editar abre para a direita (o botão fica à esquerda da tela) e não passa da borda */
+  .v2-menu { left: 0; right: auto; min-width: 0; width: min(320px, calc(100vw - 32px)); }
+  .v2-menu button { padding: 12px; }
+  /* Respostas do estudo: três botões iguais, largos, na altura do polegar */
+  .v2-botoes { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 8px; margin-top: 22px; }
+  .v2-botoes .btn, .v2-botoes .bo { padding: 14px 8px; text-align: center; }
+  .v2-mc { min-height: 320px; padding: 18px; }
+  .v2-grade { gap: 20px; }
+  .v2-grade .v2-mc { min-height: 240px; }
+  /* 16px evita o zoom automático do iPhone ao tocar num campo */
+  .v2-fi, .fi { font-size: 16px; }
+  /* Dicas (tooltips) abrem embaixo do ícone e quebram linha, para não sair da tela */
+  .v2-tt { top: calc(100% + 8px); left: 0; transform: none; white-space: normal; width: max-content; max-width: min(280px, calc(100vw - 48px)); }
+  .v2-tt-quebra { width: auto; }
+  .v2-barra-selecao { bottom: calc(80px + env(safe-area-inset-bottom)); gap: 14px; padding: 12px 18px; max-width: calc(100% - 16px); }
+  .v2-modo { display: grid; grid-template-columns: 1fr 1fr; }
+  .v2-modo .ch { padding: 10px 8px; }
+  .v2-revisao { gap: 8px; }
+}

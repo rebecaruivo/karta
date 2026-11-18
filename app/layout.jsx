@@ -2,6 +2,7 @@ import "./globals.css";
 import "./v2.css";
 import Link from "next/link";
 import MenuConta from "@/components/MenuConta";
+import NavInferior, { NavTopo } from "@/components/NavPrincipal";
 import AvisoConta from "@/components/v2/AvisoConta";
 import Eventos from "@/components/v2/Eventos";
 import { authLigado } from "@/lib/auth/server";
@@ -25,9 +26,10 @@ export default function RootLayout({ children }) {
       <body>
         <header className="topo">
           <Link href="/" className="marca d">Karta</Link>
-          <nav style={{ display: "flex", gap: 20, alignItems: "center" }}><Link href="/">Baralhos</Link><Link href="/progresso">Progresso</Link><Link href="/configuracoes">Configurações</Link><MenuConta ligado={authLigado} /></nav>
+          <nav className="nav-topo"><NavTopo /><MenuConta ligado={authLigado} /></nav>
         </header>
         <main className="conteudo"><div className="v2"><AvisoConta ligado={authLigado} />{children}</div></main>
+        <NavInferior />
         <Eventos />
       </body>
     </html>

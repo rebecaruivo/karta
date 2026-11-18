@@ -442,6 +442,19 @@ O painel (`/painel`, só para administradoras) foi refeito por dentro e por fora
 
 ---
 
+## Versão para celular (18/11)
+Aberto no celular, o app estava ruim: o menu do topo (Baralhos, Progresso, Configurações, Entrar) não cabia e empurrava a página para o lado, criando rolagem horizontal em todas as telas.
+
+- **Como eu vi o problema:** abri o site publicado no navegador com a largura de um celular (390px), copiei o HTML de cada tela já carregada e renderizei com o CSS do projeto para comparar antes e depois. Um script mede se algum elemento passa da largura da tela (`scrollWidth`): antes, 460px numa tela de 390.
+- **Navegação embaixo:** no celular, o topo ficou só com a marca e a conta, e Baralhos / Progresso / Ajustes viraram uma barra fixa embaixo, ao alcance do polegar e com a aba atual marcada. A barra some durante o estudo, para a carta ter a tela toda.
+- **Lista do baralho:** palavra e leitura na primeira linha e o significado e a frase embaixo, usando a largura toda (antes, a coluna de "Ver as cartas" espremia o texto).
+- **Menu Editar:** abria para a esquerda e saía da tela; no celular, abre para a direita e não passa da borda.
+- **Estudo:** os três botões de resposta ficaram iguais e largos, os atalhos de teclado somem em telas de toque e o nome do baralho sai do topo para a barra de progresso ter espaço.
+- **Detalhes:** títulos menores, botões do cabeçalho na largura toda, campos com 16px (abaixo disso o iPhone dá zoom ao tocar), dicas que abrem embaixo do ícone e quebram linha, cartas da prévia que não estouram em telas estreitas e rótulos mais curtos no Novo baralho ("Gerar por tema" / "Usar minhas palavras").
+- **Bug encontrado no caminho:** o baralho de exemplo nascia sem as cartas de frase (4 cartas por palavra em vez de 7). O arquivo do exemplo está no formato antigo, em que "só áudio" ainda incluía a frase, e a mudança das facetas opcionais passou a ler esse formato do jeito novo. O exemplo agora é convertido ao ser aberto.
+
+---
+
 ## Próximas etapas
 - [x] Áudio de cada carta (Gemini TTS, com a voz do navegador como plano B)
 - [x] Exportação `.apkg` para o Anki

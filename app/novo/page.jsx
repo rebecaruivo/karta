@@ -216,9 +216,9 @@ export default function NovoBaralhoV2() {
       <Link href="/" className="mu">← Baralhos</Link>
       <h1 style={{ margin: "12px 0 8px" }}>Novo baralho</h1>
       <p className="mu" style={{ marginBottom: 20 }}>Cada palavra vira até 7 cartas, uma para cada conexão. Escolha o idioma, o nível e o tema.</p>
-      <div className="chips" style={{ marginBottom: 16 }}>
-        <button type="button" className={`ch ${modo === "tema" ? "on" : ""}`} onClick={() => trocarModo("tema")} disabled={Boolean(etapa)}>Gerar a partir de um tema</button>
-        <button type="button" className={`ch ${modo === "palavras" ? "on" : ""}`} onClick={() => trocarModo("palavras")} disabled={Boolean(etapa)}>Inserir minhas palavras</button>
+      <div className="chips v2-modo" style={{ marginBottom: 16 }}>
+        <button type="button" className={`ch ${modo === "tema" ? "on" : ""}`} onClick={() => trocarModo("tema")} disabled={Boolean(etapa)}>Gerar por tema</button>
+        <button type="button" className={`ch ${modo === "palavras" ? "on" : ""}`} onClick={() => trocarModo("palavras")} disabled={Boolean(etapa)}>Usar minhas palavras</button>
       </div>
 
       {/* ── MODO A, passo 1: tema ── */}

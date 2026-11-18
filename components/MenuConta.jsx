@@ -18,7 +18,7 @@ export default function MenuConta({ ligado }) {
   }
   return (
     <span style={{ display: "flex", gap: 12, alignItems: "center" }}>
-      <span className="mu" title={usuario.email}>{usuario.name || usuario.email}</span>
+      <span className="mu menu-conta-nome" title={usuario.email}>{usuario.name || usuario.email}</span>
       <button className="v2-link" style={{ fontWeight: 600 }} onClick={sair}>Sair</button>
     </span>
   );

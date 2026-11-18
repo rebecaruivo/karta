@@ -98,7 +98,7 @@ export default function EstudarV2() {
     <div className="estudo">
       <div className="estudo-topo">
         <Link href={voltar} className="mu">← Sair</Link>
-        <span className="mu">{dados.deck.name}</span>
+        <span className="mu estudo-nome">{dados.deck.name}</span>
         <div className="bar" style={{ flex: 1, marginTop: 0 }}><div style={{ width: `${pct}%` }} /></div>
         <span className="mu v2-contador" title="Cartas vistas nesta sessão">{vistas.size} / {total}{revendo > 0 && ` · ${revendo} para rever`}</span>
       </div>
