@@ -48,7 +48,7 @@ export default function Configuracoes() {
         </div>
       ) : null}
 
-      <form className="form" onSubmit={salvar}>
+      <form className="form" style={{ maxWidth: "none" }} onSubmit={salvar}>
         <div>
           <label className="lb" htmlFor="chave">{salva ? "Trocar chave" : "Sua chave do Gemini"}</label>
           <input id="chave" className="fi" type="password" autoComplete="off" value={valor}

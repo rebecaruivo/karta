@@ -34,10 +34,11 @@ Modo B: suas palavras ─▶ porta de entrada ───────────�
 - **O Módulo 3 não usa IA:** as cartas saem de um catálogo de 7 conexões, sem custo nem variação.
 - **Repetição espaçada com FSRS** ([ts-fsrs](https://github.com/open-spaced-repetition/ts-fsrs)), o algoritmo que o Anki oferece desde 2023, com dados no IndexedDB do navegador.
 - **Áudio opcional por baralho**, que dá para ligar e desligar depois sem perder o histórico; em Configurações a pessoa escolhe de onde vem a voz: gravações do Gemini, voz do navegador ou as duas.
-- **Cinco idiomas com regras próprias:** mandarim (pinyin com tom), japonês (hiragana + romaji) e inglês, francês e espanhol, que não têm pronúncia escrita — nesses três, a pronúncia é o áudio. Francês e espanhol guardam o artigo definido (“la pomme”, “la manzana”).
+- **Cinco idiomas com regras próprias:** mandarim (pinyin com tom), japonês (hiragana + romaji) e inglês, francês e espanhol (IPA). A palavra vem limpa, sem artigo nem pronome antes (“pomme”, “manzana”).
 - **Baralho de exemplo sem chave:** o demo “Comida” em mandarim mostra as cartas por conexão e já vem com os áudios.
 - **Banco de palavras compartilhado** (Postgres no Neon): uma palavra gerada por alguém fica no banco e é reaproveitada por todos, sem gastar a cota do Gemini de novo.
 - **Contas (Google ou e-mail) e baralhos no banco:** com login, baralhos e progresso ficam no Postgres e aparecem em qualquer aparelho; sem login, tudo continua funcionando no navegador.
+- **Aba "Progresso"**: dias seguidos, cartas por dia, revisões previstas, domínio por baralho e pontos fracos, com uma **análise com IA** que lê só estatísticas agregadas e sugere o que praticar.
 - **Exporta para o Anki** (`.apkg`): uma nota por palavra e um tipo de cartão por conexão, com as gravações dentro do pacote e a voz do sistema do Anki como plano B.
 - **O baralho continua editável:** acrescentar palavras (digitando ou pedindo à IA), corrigir sem perder o histórico de estudo, gerar uma palavra de novo e excluir em massa.
 
@@ -62,12 +63,13 @@ Montar um baralho bom de vocabulário dá trabalho: escolher as palavras do nív
 | API sem backend próprio | Rotas `/api` que viram funções serverless; cada visitante usa a própria chave, então a cota do projeto não é exposta |
 | Diagnóstico de problemas reais | [`scripts/diagnostico.mjs`](scripts/diagnostico.mjs), os 6 problemas do [primeiro teste](docs/processo.md#dia-2-1411-as-telas-e-o-primeiro-teste-real) e o [chiado causado por um certificado C2PA](docs/processo.md#dia-2-à-tarde-1411-áudio) |
 | Do design ao produto | [Mockups](docs/design) e o [protótipo das cartas por conexão](docs/arquitetura/cartas-por-conexao.html) |
-| Testes automáticos | [`scripts/testar-apkg.mjs`](scripts/testar-apkg.mjs) (formato do Anki e idiomas com/sem leitura), [`scripts/testar-v2.mjs`](scripts/testar-v2.mjs) (porta de entrada, idiomas, módulos, cartas, fila, edição, banco) e [`scripts/testar-srs.mjs`](scripts/testar-srs.mjs) (repetição espaçada) |
+| Testes automáticos | [`scripts/testar-apkg.mjs`](scripts/testar-apkg.mjs) (formato do Anki e apoio de leitura por idioma), [`scripts/testar-v2.mjs`](scripts/testar-v2.mjs) (porta de entrada, idiomas, módulos, cartas, fila, edição, banco) e [`scripts/testar-srs.mjs`](scripts/testar-srs.mjs) (repetição espaçada) |
 | Pipeline de IA em etapas, com uma pessoa no meio | [Módulo 1](lib/v2/modulo1.js) → revisão → [Módulo 2](lib/v2/modulo2.js) → [Módulo 3](lib/v2/pontes.js), cada um com uma responsabilidade |
 | Validar a IA com fonte externa | [`lib/v2/dados/hsk.js`](lib/v2/dados/hsk.js), gerado da lista oficial do HSK por [`scripts/baixar-hsk.mjs`](scripts/baixar-hsk.mjs) |
 | Banco de dados e custo de IA | [`lib/v2/bancoPalavras.js`](lib/v2/bancoPalavras.js) e [`bancoPalavrasPostgres.js`](lib/v2/bancoPalavrasPostgres.js): palavras já geradas vêm do Postgres em vez de uma nova chamada ao Gemini |
 | Arquitetura que permite trocar o armazenamento | [`lib/v2/adaptadores.js`](lib/v2/adaptadores.js): navegador e servidor com as mesmas operações; os mesmos testes do repositório rodam nos dois |
 | Segurança de dados por usuário | [`lib/v2/dadosServidor.js`](lib/v2/dadosServidor.js): usuário vindo da sessão, filtro em toda consulta, sem sobrescrever dado alheio, sem injeção de SQL (com testes) |
+| Análise de dados com IA | [`lib/v2/progresso.js`](lib/v2/progresso.js) calcula as métricas; [`lib/v2/analise.js`](lib/v2/analise.js) manda ao Gemini só números agregados e recebe um diagnóstico com formato obrigatório |
 | Protótipo antes de construir | [`scripts/prototipo-modulo2.mjs`](scripts/prototipo-modulo2.mjs) mediu qualidade, custo e tempo de dois modelos antes da escolha |
 
 ## Como funciona
@@ -96,7 +98,7 @@ Estudo: o FSRS decide quando cada carta volta
 | Erro 503 e falha de rede: nova tentativa. Erro 401 e 429: para | Só repete o que esperar resolve |
 | FSRS | Com até 7 cartas por palavra, o agendamento precisa ser preciso; o FSRS é o algoritmo que o Anki oferece desde 2023 e tem biblioteca mantida |
 | Um perfil por idioma | [`lib/v2/idiomas.js`](lib/v2/idiomas.js) reúne nome, níveis, escrita, leitura, voz e limites de frase; prompt, telas e Anki leem do mesmo lugar |
-| Leitura escrita só onde faz sentido | Mandarim usa pinyin e japonês usa hiragana + romaji; inglês, francês e espanhol não têm pronúncia escrita, porque o áudio é a pronúncia |
+| Leitura escrita em todos os idiomas | Mandarim usa pinyin, japonês usa hiragana + romaji e os latinos usam IPA; a linha de apoio segue a mesma função em todas as cartas |
 | Neon Postgres | Banco gratuito que não pausa por inatividade (o Supabase gratuito pausa depois de uma semana), conectado pela Vercel |
 | IndexedDB | O Karta guarda facetas, cartas e gravações de áudio; o `localStorage` não comporta isso |
 
@@ -114,6 +116,7 @@ npm run diagnostico             # confere a chave e mede quais modelos estão re
 npm run testar:apkg             # testa a exportação para o Anki (5 idiomas)
 npm run testar:v2               # testa a v2 (porta de entrada, módulos, cartas, fila, edição, banco)
 npm run testar:srs              # testa a repetição espaçada (FSRS)
+npm run testar:progresso        # testa as métricas da aba Progresso e a análise com IA
 npm run dev
 ```
 

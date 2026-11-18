@@ -13,7 +13,7 @@ import { lerPalavras, LIMITES } from "@/lib/v2/portaEntrada";
 import { separarPorGloss, separarRepetidas, escritasDoBaralho } from "@/lib/v2/edicao";
 import { cabecalhosComChave } from "@/lib/chave";
 import { exportarApkgV2 } from "@/lib/v2/exportarApkg";
-import { idiomaV2, leituraDe, classeEscrita } from "@/lib/v2/idiomas.js";
+import { idiomaV2, leituraDe, classeEscrita, classeComGenero } from "@/lib/v2/idiomas.js";
 
 const MAIS_POR_VEZ = 5;
 
@@ -231,15 +231,15 @@ function Corrigir({ deck, palavra, palavras, aoTerminar, aoFechar }) {
   );
 }
 
-// Nomes e etiquetas das conexões, como no protótipo
+// Nomes das conexões, como no protótipo
 const NOMES = [
-  ["AUDIO_TO_WORD", "Áudio → Palavra", "Áudio na frente"],
-  ["AUDIO_TO_MEANING", "Áudio → Significado", "Áudio na frente"],
-  ["WORD_TO_AUDIO", "Palavra → Áudio", "Áudio no verso"],
-  ["MEANING_TO_SENTENCE", "Significado → Frase", "Frase no verso"],
-  ["SENTENCE_AUDIO_TO_SENTENCE", "Áudio da frase → Frase", "Frase no verso"],
-  ["CLOZE_SENTENCE_TO_WORD", "Frase com lacuna → Palavra", "Frase na frente"],
-  ["WORD_TO_MEANING", "Palavra → Significado", "Texto nos dois lados"],
+  ["AUDIO_TO_WORD", "Áudio → Palavra"],
+  ["AUDIO_TO_MEANING", "Áudio → Significado"],
+  ["WORD_TO_AUDIO", "Palavra → Áudio"],
+  ["MEANING_TO_SENTENCE", "Significado → Frase"],
+  ["SENTENCE_AUDIO_TO_SENTENCE", "Áudio da frase → Frase"],
+  ["CLOZE_SENTENCE_TO_WORD", "Frase com lacuna → Palavra"],
+  ["WORD_TO_MEANING", "Palavra → Significado"],
 ];
 
 function Previa({ palavra, cartas, comAudio }) {
@@ -247,9 +247,9 @@ function Previa({ palavra, cartas, comAudio }) {
   const pontes = new Set(cartas.map((c) => c.bridge_template_id));
   return (
     <div className="v2-grade" style={{ margin: "16px 0 32px" }}>
-      {NOMES.filter(([id]) => pontes.has(id)).map(([id, nome, tag]) => (
+      {NOMES.filter(([id]) => pontes.has(id)).map(([id, nome]) => (
         <div key={id}>
-          <div className="v2-rotulo-ponte">{nome} <span className="v2-tag">{tag}</span></div>
+          <div className="v2-rotulo-ponte">{nome}</div>
           <Carta ponte={id} palavra={palavra} virada={!!viradas[id]} autoTocar={false} comAudio={comAudio}
             aoVirar={() => setViradas((v) => ({ ...v, [id]: !v[id] }))} />
         </div>
@@ -348,7 +348,7 @@ export default function BaralhoV2() {
     const ligar = !comAudio;
     const texto = ligar
       ? "Ligar os exercícios de áudio? As cartas de escuta e pronúncia voltam com o histórico que tinham, e palavras sem elas ganham as 4 cartas de áudio."
-      : `Desligar os exercícios de áudio? As 4 cartas de escuta e pronúncia de cada palavra ficam suspensas (nada é apagado) e o botão "Ouvir frase" some das outras cartas. Dá para ligar de novo depois.${!cfg.temLeitura ? " Neste idioma, sem áudio não há pronúncia." : ""}`;
+      : `Desligar os exercícios de áudio? As 4 cartas de escuta e pronúncia de cada palavra ficam suspensas (nada é apagado).${cfg.escritaPropria ? ' O botão "Ouvir frase" some das outras cartas.' : ""} Dá para ligar de novo depois.`;
     if (!window.confirm(texto)) return;
     const r = await (await obterRepo()).definirAudio(deck.id, ligar);
     setMensagem(ligar
@@ -418,7 +418,7 @@ export default function BaralhoV2() {
         </p>
       )}
       {avisoAudio && <div className="erro" style={{ marginBottom: 20 }}>{avisoAudio}</div>}
-      {!comAudio && <p className="mu" style={{ marginBottom: 16 }}>Baralho sem exercícios de áudio: 3 cartas por palavra.{!cfg.temLeitura && " Neste idioma, sem áudio não há pronúncia."}</p>}
+      {!comAudio && <p className="mu" style={{ marginBottom: 16 }}>Baralho sem exercícios de áudio: 3 cartas por palavra.</p>}
 
       {mensagem && <div className="aviso" style={{ marginBottom: 16 }}>{mensagem}</div>}
       {acrescentando && <Acrescentar deck={deck} palavras={palavras} cartasPorPalavra={comAudio ? 7 : 3} aoTerminar={terminouAcrescentar} aoFechar={() => setAcrescentando(false)} />}
@@ -426,8 +426,10 @@ export default function BaralhoV2() {
       {palavras.length === 0 && !acrescentando && (
         <p className="mu" style={{ margin: "24px 0" }}>Este baralho está sem palavras. Use <strong>Editar → Acrescentar palavras</strong>.</p>
       )}
-      {palavras.length > 0 && <div className={`lr lh ${cfg.temLeitura ? "" : "v2-sem-leitura"}`}>
-        <span>Palavra</span>{cfg.temLeitura && <span>{cfg.rotuloLeitura}</span>}<span>Significado e frase</span>
+      {palavras.length > 0 && <div className="lr lh">
+        <span>Palavra</span>
+        {cfg.escritaPropria ? <span>{cfg.rotuloLeitura}</span> : <span>Significado</span>}
+        <span>{cfg.escritaPropria ? "Significado e frase" : "Frase"}</span>
         <span className="v2-col-sel">
           {selecionando && <label className="v2-check" title="Selecionar todas">todas <input type="checkbox" checked={todasMarcadas} onChange={() => setSelecionadas(todasMarcadas ? new Set() : new Set(palavras.map((p) => p.concept.id)))} /></label>}
         </span>
@@ -442,14 +444,28 @@ export default function BaralhoV2() {
         const marcada = selecionadas.has(p.concept.id);
         return (
           <div key={p.concept.id}>
-            <div className={`lr ${marcada ? "v2-marcada" : ""} ${cfg.temLeitura ? "" : "v2-sem-leitura"}`}>
-              <span className={`pal ${cfg.escritaPropria ? "v2-cjk" : ""}`} lang={cfg.codigoVoz}>{word?.value}</span>
-              {cfg.temLeitura && <span className="mu" style={{ fontSize: 15 }}>{leituraDe(word?.metadata)}</span>}
-              <span>
-                <strong>{meaning?.value}</strong> <span className="mu">· {word?.metadata?.pos} · você digitou "{p.concept.gloss}"</span><br />
-                <span className={`mu ${cfg.escritaPropria ? "v2-cjk" : ""}`} lang={cfg.codigoVoz}>{sentence?.value}</span><br /><span className="mu" style={{ fontSize: 13 }}>{sentence?.metadata?.translation}</span>
-                {alertas.length > 0 && <><br /><span className="mu" style={{ fontSize: 13 }}>⚠ {alertas.join(" · ")}</span></>}
-              </span>
+            <div className={`lr ${marcada ? "v2-marcada" : ""}`}>
+              <span className={`pal ${cfg.escritaPropria ? "v2-cjk" : "pal-latina"}`} lang={cfg.codigoVoz}>{word?.value}</span>
+              {cfg.escritaPropria ? (
+                <span className="mu" style={{ fontSize: 15 }}>{leituraDe(word?.metadata)}</span>
+              ) : (
+                <span>
+                  <strong>{meaning?.value}</strong> <span className="mu">· {classeComGenero(word?.metadata)} · você digitou "{p.concept.gloss}"</span>
+                  {alertas.length > 0 && <><br /><span className="mu" style={{ fontSize: 13 }}>⚠ {alertas.join(" · ")}</span></>}
+                </span>
+              )}
+              {cfg.escritaPropria ? (
+                <span>
+                  <strong>{meaning?.value}</strong> <span className="mu">· {classeComGenero(word?.metadata)} · você digitou "{p.concept.gloss}"</span><br />
+                  <span className="mu v2-cjk" lang={cfg.codigoVoz}>{sentence?.value}</span><br /><span className="mu" style={{ fontSize: 13 }}>{sentence?.metadata?.translation}</span>
+                  {alertas.length > 0 && <><br /><span className="mu" style={{ fontSize: 13 }}>⚠ {alertas.join(" · ")}</span></>}
+                </span>
+              ) : (
+                <span>
+                  <span className="mu" lang={cfg.codigoVoz}>{sentence?.value}</span><br />
+                  <span className="mu" style={{ fontSize: 13 }}>{sentence?.metadata?.translation}</span>
+                </span>
+              )}
               <span className="v2-col-sel">
                 <button className="v2-link" onClick={() => setAberta(aberta === p.concept.id ? null : p.concept.id)}>
                   {aberta === p.concept.id ? "Fechar cartas" : `Ver as ${cartasDaPalavra.length} cartas`}

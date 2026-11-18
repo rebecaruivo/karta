@@ -14,8 +14,10 @@ import { adaptadorMemoria, adaptadorIndexedDB, adaptadorServidor, adaptadorMisto
 import { TABELAS, montarSQL, paraLinha, paraRegistro, executar, reiniciarEsquema } from "../lib/v2/dadosServidor.js";
 import { podeGerarAudio, usaGravacao, usaVozDoNavegador } from "../lib/preferencias.js";
 import { calcularLacuna, fraseComLacuna, validarMandarim, validarIdioma, montarPalavraEnriquecida, capitalizarPinyin, alertas } from "../lib/v2/facetas.js";
-import { IDIOMAS_V2, IDIOMAS_V2_LISTA, idiomaV2, textoParaVoz, leituraDe } from "../lib/v2/idiomas.js";
-import { instrucaoDoSistema as instrucaoM2 } from "../lib/v2/modulo2.js";
+import { IDIOMAS_V2, IDIOMAS_V2_LISTA, idiomaV2, textoParaVoz, leituraDe, generoCurto, classeComGenero } from "../lib/v2/idiomas.js";
+import { instrucaoDoSistema as instrucaoM2, VERSAO_PROMPT } from "../lib/v2/modulo2.js";
+import { ehAdmin, emailsAdmin } from "../lib/auth/admin.js";
+import { registrarEventos } from "../lib/v2/eventosServidor.js";
 
 let falhas = 0;
 const conferir = (ok, msg) => { console.log(`${ok ? "✓" : "✗"} ${msg}`); if (!ok) falhas++; };
@@ -149,7 +151,8 @@ conferir(ESQUEMA.every((cmd) => comandos.includes(cmd)), "cria a tabela palavras
 const respostaChá = { ...boa, lemma: "茶", meaning: "chá", sentence: "我喝茶。", target_in_sentence: "茶", ambiguous: false, other_senses: "", level_fit: true, note: "" };
 await pg.guardar([{ chave: "k1", resposta: respostaChá, partes: { versao: 4, idioma: "zh", nivel: "HSK 1", entrada: "chá", sentido: null, hsk: 1 } }]);
 const gravada = tabela.get("k1");
-conferir(colunas(comandos.at(-1)).length === 19 && gravada.lemma === "茶" && gravada.significado === "chá" && gravada.frase === "我喝茶。" && gravada.hsk === 1 && gravada.versao_prompt === 4 && gravada.entrada === "chá", "cada valor vai para a coluna certa (19 colunas)");
+conferir(colunas(comandos.at(-1)).length === 20 && gravada.lemma === "茶" && gravada.significado === "chá" && gravada.frase === "我喝茶。" && gravada.hsk === 1 && gravada.versao_prompt === 4 && gravada.entrada === "chá" && gravada.genero === null, "cada valor vai para a coluna certa (20 colunas)");
+conferir(ESQUEMA.some((c) => c.includes("RENAME COLUMN pinyin TO leitura")) && ESQUEMA.some((c) => c.includes("ADD COLUMN IF NOT EXISTS genero")), "migração: bancos antigos renomeiam pinyin → leitura e ganham a coluna genero, sem perder dados");
 const voltou = (await pg.buscar(["k1", "nao-existe"])).get("k1");
 conferir(voltou.lemma === "茶" && voltou.sentence === "我喝茶。" && voltou.target_in_sentence === "茶" && voltou.pos === boa.pos, "a linha do banco volta no mesmo formato da resposta da IA");
 conferir(tabela.get("k1").usos === 1, "cada reaproveitamento soma 1 em \"usos\"");
@@ -157,6 +160,33 @@ await pg.guardar([{ chave: "k1", resposta: { ...respostaChá, sentence: "她喝�
 conferir(tabela.get("k1").frase === "我喝茶。", "guardar de novo a mesma palavra não sobrescreve (vale a primeira versão)");
 await pg.guardar([{ chave: "k1", resposta: { ...respostaChá, sentence: "她喝茶。" }, partes: { versao: 4, idioma: "zh", nivel: "HSK 1", entrada: "chá", sentido: null, hsk: 1 } }], { substituir: true });
 conferir(tabela.get("k1").frase === "她喝茶。" && tabela.get("k1").usos === 1, "\"Gerar de novo\" substitui a versão e mantém a contagem de usos");
+
+console.log("\n— Gênero (francês e espanhol) e versão do prompt");
+conferir(VERSAO_PROMPT === 5, "prompt do Módulo 2 na versão 5 (leitura IPA, sem artigo, com gênero)");
+conferir(chavePalavra({ versao: VERSAO_PROMPT, language: "fr", level: "A1", gloss: "maçã" }).startsWith("m2:v5:fr:"), "a versão nova entra na chave do banco: palavras antigas não são servidas no formato novo");
+conferir(instrucaoM2(idiomaV2("fr")).includes('"genero"') && !instrucaoM2(idiomaV2("zh")).includes('"genero"'), "o prompt pede o gênero só nos idiomas que têm gênero");
+const pomme = montarPalavraEnriquecida({ id: "w1", gloss: "maçã" }, { lemma: "pomme", leitura: "/pɔm/", pos: "substantivo", genero: "F", meaning: "maçã", sentence: "Je mange une pomme.", target_in_sentence: "pomme", frase_leitura: "/ʒə mɑ̃ʒ yn pɔm/", sentence_translation: "Eu como uma maçã." }, { deck_id: "d", language: "fr", origin: "user" });
+const wordPomme = pomme.facets.find((f) => f.facet_type === "WORD");
+conferir(wordPomme.metadata.genero === "f" && generoCurto(wordPomme.metadata) === "f." && classeComGenero(wordPomme.metadata) === "substantivo feminino", "francês: gênero normalizado (\"F\" → f) e mostrado como \"f.\" e \"substantivo feminino\"");
+const hablar = montarPalavraEnriquecida({ id: "w1", gloss: "falar" }, { lemma: "hablar", leitura: "/aˈβlaɾ/", pos: "verbo", genero: "talvez", meaning: "falar", sentence: "Quiero hablar contigo.", target_in_sentence: "hablar", frase_leitura: "x", sentence_translation: "Quero falar com você." }, { deck_id: "d", language: "es", origin: "user" });
+conferir(!("genero" in hablar.facets[0].metadata) && classeComGenero(hablar.facets[0].metadata) === "verbo", "valor de gênero inválido é descartado (só m/f)");
+const shui = montarPalavraEnriquecida({ id: "w1", gloss: "água" }, { ...boa, genero: "m" }, { deck_id: "d", language: "zh", origin: "user" });
+conferir(!("genero" in shui.facets[0].metadata), "mandarim não guarda gênero, mesmo se a IA mandar");
+
+console.log("\n— Painel e eventos: segurança");
+const admins = emailsAdmin(" Rebeca@Exemplo.com , outra@x.com ");
+conferir(ehAdmin({ email: "rebeca@exemplo.com", emailVerified: true }, admins), "administradora com e-mail verificado entra no painel");
+conferir(!ehAdmin({ email: "rebeca@exemplo.com", emailVerified: false }, admins) && !ehAdmin({ email: "rebeca@exemplo.com" }, admins), "mesmo e-mail SEM verificação não entra (alguém pode ter criado a conta com o e-mail dela)");
+conferir(!ehAdmin({ email: "intrusa@x.com", emailVerified: true }, admins) && !ehAdmin(null, admins), "e-mail fora da lista, ou sem login, não entra");
+const gravados = [];
+const sqlEventos = { query: async (q, v = []) => { if (q.startsWith("INSERT INTO eventos")) gravados.push(v); if (q.startsWith("SELECT count")) return [{ n: 0 }]; return []; } };
+const uuid = () => crypto.randomUUID();
+await registrarEventos(sqlEventos, { deviceId: uuid(), eventos: [
+  { event_id: uuid(), tipo: "carta_respondida", rating: "nao", payload: { origem: "teste" } },
+  { event_id: uuid(), tipo: "carta_respondida", rating: "acho", payload: { lixo: "x".repeat(5000) } },
+  { event_id: uuid(), tipo: "tipo_inventado" },
+] });
+conferir(gravados.length === 2 && gravados[0][12] === '{"origem":"teste"}' && gravados[1][12] === null, "payload pequeno é gravado; payload enorme é descartado; tipo desconhecido é ignorado");
 
 console.log("\n— Módulo 3: montagem de pontes");
 const base = (gloss, ajuste = {}) => montarPalavraEnriquecida({ id: gloss, gloss, sense_hint: null }, { ...boa, ...ajuste }, { deck_id: "d1", language: "zh", origin: "user" });
@@ -381,19 +411,20 @@ console.log("\n— Perfis de idioma da v2");
 conferir(IDIOMAS_V2_LISTA.length === 5 && IDIOMAS_V2_LISTA.map((i) => i.codigo).join() === "zh,ja,en,fr,es", "cinco perfis: mandarim, japonês, inglês, francês e espanhol");
 conferir(idiomaV2("mandarim").codigo === "zh" && idiomaV2("fr").codigo === "fr", "aceita o código ISO e a chave da configuração antiga");
 conferir(idiomaV2("zh").niveis[0] === "HSK 1" && idiomaV2("ja").niveis[0] === "N5" && idiomaV2("fr").niveis[0] === "A1", "níveis por idioma: HSK, JLPT e CEFR");
-conferir(idiomaV2("zh").temLeitura && idiomaV2("ja").temLeitura && !idiomaV2("en").temLeitura && !idiomaV2("fr").temLeitura && !idiomaV2("es").temLeitura, "leitura escrita só no mandarim e no japonês");
+conferir(IDIOMAS_V2_LISTA.every((i) => i.temLeitura), "todos os idiomas têm apoio de leitura (pinyin/hiragana ou IPA)");
 conferir(idiomaV2("zh").codigoTts === "zh_CN" && idiomaV2("ja").codigoTts === "ja_JP" && idiomaV2("fr").codigoTts === "fr_FR", "código de voz do Anki por idioma");
 
 console.log("\n— Escrita e leitura por idioma");
 conferir(igual(lerPalavras("la pomme, look for, la manzana", { target_language: "fr", level: "A1" }).wordList.words.map((w) => w.gloss), ["la pomme", "look for", "la manzana"]), "porta de entrada aceita palavras com espaço (artigo e phrasal verb)");
-const validacaoLatina = (extra = {}) => validarIdioma({ lemma: "la pomme", pos: "substantivo", meaning: "maçã", sentence: "Je mange la pomme.", target_in_sentence: "la pomme", sentence_translation: "Eu como a maçã.", ambiguous: false, other_senses: "", level_fit: true, note: "", ...extra }, idiomaV2("fr"));
-conferir(validacaoLatina().length === 0, "francês · palavra com artigo e frase sem leitura passam sem problemas");
+const validacaoLatina = (extra = {}) => validarIdioma({ lemma: "pomme", leitura: "/pɔm/", frase_leitura: "/ʒə mɑ̃ʒ la pɔm/", pos: "substantivo", meaning: "maçã", sentence: "Je mange la pomme.", target_in_sentence: "pomme", sentence_translation: "Eu como a maçã.", ambiguous: false, other_senses: "", level_fit: true, note: "", ...extra }, idiomaV2("fr"));
+conferir(validacaoLatina().length === 0, "francês · palavra sem artigo e IPA passam sem problemas");
+conferir(validacaoLatina({ leitura: "" }).some((p) => p.includes("sem leitura")), "francês · palavra sem IPA é recusada");
 conferir(validacaoLatina({ sentence: "Je mange la pomme avec mon ami dans la cuisine de ma mère aujourd'hui." }).some((p) => p.includes("12 palavras")), "francês · frase com mais de 12 palavras é recusada");
 const japonesa = { lemma: "たべる", leitura: "たべる (taberu)", pos: "verbo", meaning: "comer", sentence: "パンを食べます。", target_in_sentence: "食べます", frase_leitura: "パンをたべます。", sentence_translation: "Eu como pão.", ambiguous: false, other_senses: "", level_fit: true, note: "" };
 conferir(validarIdioma(japonesa, idiomaV2("ja")).length === 0, "japonês · leitura em hiragana + romaji passa");
 conferir(validarIdioma({ ...japonesa, leitura: "" }, idiomaV2("ja")).some((p) => p.includes("sem leitura")), "japonês · sem leitura é recusado");
-const enriquecidaFrancesa = montarPalavraEnriquecida({ id: "w1", gloss: "maçã" }, { lemma: "la pomme", pos: "substantivo", meaning: "maçã", sentence: "Je mange la pomme.", target_in_sentence: "la pomme", sentence_translation: "Eu como a maçã.", ambiguous: false, other_senses: "", level_fit: true, note: "" }, { deck_id: "d1", language: "fr", origin: "user" });
-conferir(!("leitura" in enriquecidaFrancesa.facets[0].metadata) && !("leitura" in enriquecidaFrancesa.facets[2].metadata), "francês · a palavra e a frase não têm faceta de leitura");
+const enriquecidaFrancesa = montarPalavraEnriquecida({ id: "w1", gloss: "maçã" }, { lemma: "pomme", leitura: "/pɔm/", frase_leitura: "/ʒə mɑ̃ʒ la pɔm/", pos: "substantivo", meaning: "maçã", sentence: "Je mange la pomme.", target_in_sentence: "pomme", sentence_translation: "Eu como a maçã.", ambiguous: false, other_senses: "", level_fit: true, note: "" }, { deck_id: "d1", language: "fr", origin: "user" });
+conferir(enriquecidaFrancesa.facets[0].metadata.leitura === "/pɔm/" && enriquecidaFrancesa.facets[2].metadata.leitura === "/ʒə mɑ̃ʒ la pɔm/", "francês · IPA fica no metadata da palavra e da frase");
 const enriquecidaJaponesa = montarPalavraEnriquecida({ id: "w1", gloss: "comer" }, japonesa, { deck_id: "d1", language: "ja", origin: "user" });
 conferir(enriquecidaJaponesa.facets[0].metadata.leitura === "たべる (taberu)" && enriquecidaJaponesa.facets[2].metadata.leitura === "パンをたべます。", "japonês · leitura fica no metadata da palavra e da frase");
 conferir(leituraDe({ pinyin: "shuǐ" }) === "shuǐ" && leituraDe({ leitura: "みず" }) === "みず", "leituraDe lê o formato antigo (pinyin) e o novo (leitura)");
@@ -402,11 +433,11 @@ conferir(textoParaVoz("水", { leitura: "みず (mizu)" }, idiomaV2("ja")) === "
 console.log("\n— Prompts por idioma");
 const promptFrances = instrucaoM2(idiomaV2("fr"));
 const promptJapones = instrucaoM2(idiomaV2("ja"));
-conferir(!promptFrances.includes('"leitura"') && promptFrances.includes("12 palavras") && promptFrances.includes("artigo definido"), "prompt do francês não pede leitura, limita a 12 palavras e mantém o artigo");
+conferir(promptFrances.includes('"leitura"') && promptFrances.includes("IPA") && promptFrances.includes("12 palavras") && promptFrances.includes("sem artigo"), "prompt do francês pede IPA, limita a 12 palavras e tira o artigo");
 conferir(promptJapones.includes('"leitura"') && promptJapones.includes("hiragana") && promptJapones.includes("20 caracteres"), "prompt do japonês pede hiragana + romaji e limita a 20 caracteres");
-conferir(pedidoM2([{ id: "w1", gloss: "maçã", lemma: "la pomme" }], "A1", "fr").includes("(em francês: la pomme)"), "Módulo 2 recebe a palavra já escolhida no idioma certo");
-const hskNaoMandarim = conferirNoHSK([{ lemma: "la pomme", gloss: "maçã" }], { "la pomme": 1 }, "A1", "fr");
-conferir(hskNaoMandarim[0].lemma === "la pomme" && !("hsk" in hskNaoMandarim[0]), "a checagem do HSK não se aplica aos outros idiomas");
+conferir(pedidoM2([{ id: "w1", gloss: "maçã", lemma: "pomme" }], "A1", "fr").includes("(em francês: pomme)"), "Módulo 2 recebe a palavra já escolhida no idioma certo");
+const hskNaoMandarim = conferirNoHSK([{ lemma: "pomme", gloss: "maçã" }], { pomme: 1 }, "A1", "fr");
+conferir(hskNaoMandarim[0].lemma === "pomme" && !("hsk" in hskNaoMandarim[0]), "a checagem do HSK não se aplica aos outros idiomas");
 
 console.log("\n— Baralho de exemplo da v2");
 const demo = JSON.parse(readFileSync(new URL("../public/demo-v2/baralho.json", import.meta.url), "utf8"));

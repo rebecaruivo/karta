@@ -9,24 +9,27 @@ import { responder, RESPOSTAS } from "@/lib/v2/srs";
 import Carta from "@/components/v2/Carta";
 import { registrarEvento } from "@/lib/v2/eventos";
 
-const VOLTA_NA_SESSAO_MS = 20 * 60 * 1000; // carta que volta em até 20 min reaparece nesta sessão
-
 export default function EstudarV2() {
   const { id } = useParams();
   const [dados, setDados] = useState(undefined);
   const [fila, setFila] = useState([]);
   const [total, setTotal] = useState(0);
-  // Progresso = cartas já vistas nesta sessão. Contar só as que saem da sessão deixava a barra
-  // parada: carta nova volta em 10 min (passo de fixação do FSRS) e reaparece na mesma sessão.
+  // Progresso = cartas já vistas nesta sessão. Cada carta sai da fila ao ser respondida,
+  // então a barra chega a 100% e a sessão termina em vez de repetir cartas sem fim.
   const [vistas, setVistas] = useState(() => new Set());
   const [virada, setVirada] = useState(false);
+  // Carta marcada como "Difícil" volta UMA vez no fim da sessão (decisão de 18/11);
+  // as outras saem ao serem respondidas, para a sessão terminar.
+  const [voltaram, setVoltaram] = useState(() => new Set());
   const inicioCarta = useRef(Date.now());
 
   useEffect(() => {
     obterRepo().then((r) => r.carregarBaralho(id)).then((d) => {
       setDados(d);
       if (!d) return;
-      const f = montarFila(d.cartas);
+      // ?conceitos=a,b,c vem do "Estudar só essas" (aba Progresso): só essas palavras, mesmo antes da data
+      const conceitos = new URLSearchParams(window.location.search).get("conceitos")?.split(",").filter(Boolean) || null;
+      const f = montarFila(d.cartas, { conceitos });
       setFila(f); setTotal(f.length);
       if (f.length) registrarEvento("sessao_iniciada", { deck_id: id, idioma: d.deck.target_language });
     });
@@ -43,10 +46,14 @@ export default function EstudarV2() {
       idioma: dados.deck.target_language,
     });
     const nova = responder(carta, resposta);
-    await (await obterRepo()).atualizarCarta(nova);
-    const voltaLogo = new Date(nova.due_at) - new Date() <= VOLTA_NA_SESSAO_MS;
+    const repo = await obterRepo();
+    await repo.atualizarCarta(nova);
+    // Registro da resposta, para a aba "Progresso" (cartas por dia, pontos fracos). Se falhar, o estudo segue.
+    repo.registrarRevisao({ carta, rating: resposta, duracao_ms: Date.now() - inicioCarta.current }).catch(() => {});
+    const volta = resposta === "nao" && !voltaram.has(carta.id);
+    if (volta) setVoltaram((v) => new Set(v).add(carta.id));
     // A carta respondida fica como "cabeça" só para a próxima não ser da mesma palavra
-    setFila((f) => espacarPalavras([carta, ...f.slice(1), ...(voltaLogo ? [nova] : [])]).slice(1));
+    setFila((f) => espacarPalavras([carta, ...f.slice(1), ...(volta ? [nova] : [])]).slice(1));
     setVistas((v) => new Set(v).add(carta.id));
     setVirada(false);
   }
@@ -86,13 +93,14 @@ export default function EstudarV2() {
   const pct = total ? Math.round((vistas.size / total) * 100) : 0;
   const revendo = fila.filter((c) => vistas.has(c.id)).length;
 
+
   return (
     <div className="estudo">
       <div className="estudo-topo">
         <Link href={voltar} className="mu">← Sair</Link>
         <span className="mu">{dados.deck.name}</span>
         <div className="bar" style={{ flex: 1, marginTop: 0 }}><div style={{ width: `${pct}%` }} /></div>
-        <span className="mu" title="Cartas vistas nesta sessão">{vistas.size} / {total}{revendo > 0 && ` · ${revendo} para rever`}</span>
+        <span className="mu v2-contador" title="Cartas vistas nesta sessão">{vistas.size} / {total}{revendo > 0 && ` · ${revendo} para rever`}</span>
       </div>
 
       <Carta key={carta.id + carta.reps} ponte={carta.bridge_template_id} palavra={palavra} virada={virada} aoVirar={() => setVirada((v) => !v)}

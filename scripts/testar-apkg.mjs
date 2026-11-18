@@ -62,13 +62,18 @@ const dbS = new SQL.Database(await (await JSZip.loadAsync(v2s.bytes)).file("coll
 const fldsS = dbS.exec("select flds from notes")[0].values.map(([f]) => f.split("\x1f"));
 conferir(dbS.exec("select count(*) from cards")[0].values[0][0] === 6 && fldsS.every((f) => f[11] === "" && f[9] === ""), "baralho sem áudio: 3 cartões por palavra, sem gravações");
 
-console.log("\n— Idiomas sem leitura e com leitura");
-const fr = palavra("maçã", ia({ lemma: "la pomme", meaning: "maçã", sentence: "Je mange la pomme.", alvo: "la pomme", traducao: "Eu como a maçã." }), "fr");
+console.log("\n— Idiomas com apoio de leitura (IPA, pinyin e kana)");
+const fr = palavra("maçã", ia({ lemma: "pomme", leitura: "/pɔm/", meaning: "maçã", sentence: "Je mange la pomme.", alvo: "pomme", fraseLeitura: "/ʒə mɑ̃ʒ la pɔm/", traducao: "Eu como a maçã." }), "fr");
 const apkgFr = await montarApkgV2({ SQL, JSZip, deck: { id: "deck-fr", name: "Frutas", level: "A1", target_language: "fr", facetas_opcionais: ["AUDIO"] }, palavras: [fr], cartas: montarCartas([fr]).cartas, obterAudio: async () => null });
 const dbFr = new SQL.Database(await (await JSZip.loadAsync(apkgFr.bytes)).file("collection.anki2").async("uint8array"));
 const [modelosFr] = dbFr.exec("select models from col")[0].values.map(([t]) => JSON.parse(t));
 const modeloFr = Object.values(modelosFr)[0];
-conferir(!modeloFr.flds.some((f) => f.name === "Leitura" || f.name === "FraseLeitura") && modeloFr.flds.length === 10, "francês · modelo sem os campos de leitura (10 campos)");
+conferir(modeloFr.flds.some((f) => f.name === "Leitura") && modeloFr.flds.some((f) => f.name === "FraseLeitura") && modeloFr.flds.length === 12, "francês · modelo com os campos de leitura (12 campos)");
+const SEM_AUDIO_NO_VERSO = ["Palavra → Significado", "Áudio → Significado", "Áudio → Palavra", "Frase com lacuna → Palavra", "Significado → Frase"];
+conferir(SEM_AUDIO_NO_VERSO.every((nome) => {
+  const t = modeloFr.tmpls.find((x) => x.name.includes(nome));
+  return t && !/ComAudio|Ouvir|\[sound:|\{\{tts/.test(t.afmt);
+}), "francês · verso sem áudio nas 5 cartas corrigidas");
 conferir(modeloFr.tmpls.some((t) => t.qfmt.includes("{{tts fr_FR:Palavra}}")), "francês · a voz do Anki usa fr_FR");
 conferir(apkgFr.nomeBaralho === "Karta::Francês::Frutas (A1)", "francês · nome do baralho no Anki");
 

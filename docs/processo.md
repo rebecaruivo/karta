@@ -190,9 +190,9 @@ A questão em aberto sobre o algoritmo (seção 10.2 do documento) foi decidida 
 |---|---|---|
 | 4 estados (com Relearning) | NEW, LEARNING, REVIEW | Relearning (errar uma carta que já sabia) vira LEARNING |
 | Campos internos (`scheduled_days`, `learning_steps`) | Não existem | Guardados em `srs_extra` (proposta) |
-| 4 notas (Again, Hard, Good, Easy) | 3 botões do Karta | Não sei = Again, Acho que sei = Hard, Decorei = Good |
+| 4 notas (Again, Hard, Good, Easy) | 3 botões do Karta | Difícil = Again, Médio = Hard, Fácil = Good |
 
-Com o algoritmo de verdade, as respostas "Decorei" seguidas espaçam a carta em **2 → 13 → 48 → 173 → 521 dias**. Os testes ([`scripts/testar-srs.mjs`](../scripts/testar-srs.mjs)) verificam comportamento, não números decorados: quanto melhor a resposta, mais tarde a carta volta; o intervalo cresce a cada acerto; errar uma carta madura a devolve no mesmo dia, conta um lapso e reduz a estabilidade.
+Com o algoritmo de verdade, as respostas "Fácil" seguidas espaçam a carta em **2 → 13 → 48 → 173 → 521 dias**. Os testes ([`scripts/testar-srs.mjs`](../scripts/testar-srs.mjs)) verificam comportamento, não números decorados: quanto melhor a resposta, mais tarde a carta volta; o intervalo cresce a cada acerto; errar uma carta madura a devolve no mesmo dia, conta um lapso e reduz a estabilidade.
 
 Duas coisas apareceram no caminho:
 - **A regra das irmãs escondia a própria carta errada.** Com o FSRS, a carta errada volta em minutos, mas a fila do dia a tratava como "palavra já estudada hoje". A regra passou a barrar só as irmãs; um teste novo cobre o caso.
@@ -353,17 +353,17 @@ A v2 nasceu só com mandarim. Agora ela aceita **japonês, inglês, francês e e
 |---|---|
 | Perfis em [`lib/v2/idiomas.js`](../lib/v2/idiomas.js) reaproveitando [`lib/idiomas.js`](../lib/idiomas.js) | Nome, níveis, sigla e voz já existiam desde a v1; a v2 acrescenta o que só ela usa: código ISO, formato de leitura e limite de frase |
 | Códigos ISO no dado (`zh`, `ja`, `en`, `fr`, `es`) | Os baralhos e o banco de palavras da v2 já usavam `zh`; os dados existentes e as palavras já geradas continuam valendo sem migração |
-| Mandarim com pinyin; japonês com hiragana + romaji; inglês, francês e espanhol sem pronúncia escrita | A pronúncia escrita foi pedida só para as escritas não latinas. Nos três idiomas latinos, a pronúncia é o áudio |
-| Francês e espanhol com artigo definido (“la pomme”, “la manzana”) | Ensina o gênero e mantém a regra da v1; a lacuna continua usando o trecho exato da frase, que pode estar no singular ou no plural |
+| Mandarim com pinyin; japonês com hiragana + romaji; inglês, francês e espanhol com IPA | Todos os idiomas mostram como ler a palavra e a frase; a linha de apoio usa o formato natural de cada escrita |
+| Francês e espanhol sem artigo antes da palavra (“pomme”, “manzana”) | A palavra fica limpa, sem o artigo virar parte do que se decora; a frase de exemplo continua mostrando o uso com artigo e gênero |
 | Limite de frase por escrita: 15 caracteres no mandarim, 20 no japonês, 12 palavras nos latinos | O limite antigo (15 caracteres) foi pensado para mandarim e cortaria frases naturais em inglês, francês e espanhol |
 | A checagem oficial do HSK vale só para o mandarim | Não existe lista oficial equivalente no projeto para JLPT ou CEFR; os outros idiomas usam prompt + validação de escrita, leitura e tamanho |
 | Campo interno `leitura`, com fallback para o `pinyin` antigo | O nome “pinyin” não serve para japonês e não existe nos idiomas latinos; o fallback mantém os baralhos antigos funcionando |
-| Dois modelos de exportação para o Anki: com leitura (mandarim e japonês) e sem leitura (inglês, francês e espanhol) | No Anki os campos pertencem ao modelo de nota; “tirar” os campos exige um modelo próprio. A voz do sistema usa o idioma certo (`zh_CN`, `ja_JP`, `en_US`, `fr_FR`, `es_ES`) |
+| Um modelo de exportação para o Anki, com campos de leitura em todos os idiomas | No Anki os campos pertencem ao modelo de nota; como todos os idiomas agora têm apoio de leitura, um modelo só basta. A voz do sistema usa o idioma certo (`zh_CN`, `ja_JP`, `en_US`, `fr_FR`, `es_ES`) |
 | Japonês com kanji vai para a voz como hiragana | O kanji é o mesmo em japonês e chinês; sem a leitura, o TTS pode falar em mandarim. A regra da v1 foi trazida para a v2 |
-| Pronúncia falada nos idiomas latinos só com exercícios de áudio ligados | Sem leitura escrita, o áudio é a única pronúncia; ao desligar o áudio na criação, o formulário avisa que não haverá pronúncia |
+| Cartas de áudio não repetem o som no rodapé | A carta de áudio da frase mantém o seletor Normal/Lenta; nas línguas latinas o verso das outras cartas também não repete o som, porque o IPA já diz como ler |
 | Baralho de exemplo “Comida” em mandarim, com áudios | A v1 tinha um demo sem chave; a v2 agora tem o equivalente em [`public/demo-v2`](../public/demo-v2), com 6 palavras e 42 cartas |
 
-O banco de palavras compartilhado passou a valer para os cinco idiomas (a chave já incluía o idioma) e a exportação para o Anki ganhou os dois modelos. Os testes automáticos cobrem os perfis, a porta de entrada, os prompts, a validação, a leitura ausente nos latinos, a voz do japonês e os dois modelos do Anki.
+O banco de palavras compartilhado passou a valer para os cinco idiomas (a chave já incluía o idioma) e a exportação para o Anki usa um modelo com apoio de leitura em todos eles. Os testes automáticos cobrem os perfis, a porta de entrada, os prompts, a validação, a leitura IPA dos latinos, a voz do japonês e o modelo do Anki.
 
 ---
 
@@ -382,6 +382,35 @@ A v2 deixou de ser beta e virou o Karta. A v1 saiu da plataforma; o código dela
 | O `testar:apkg` passou a testar só a v2 | Os testes da v1 saíram junto com o código; os casos de mandarim, francês e japonês cobrem os dois modelos de Anki |
 
 Nomes internos como `lib/v2`, `app/api/v2` e o banco `karta-v2` foram mantidos de propósito: mudá-los não traz benefício para quem usa e poderia perder os dados já salvos no navegador. Eles estão registrados aqui para não parecerem esquecimento.
+
+---
+
+## Revisão do que foi feito com o opencode (18/11)
+Os cinco idiomas, a v2 como versão oficial e o painel foram construídos com o opencode. Depois, uma revisão com o Claude, com os testes rodando a cada correção, encontrou:
+
+| O que | Problema | Correção |
+|---|---|---|
+| Banco de palavras | O prompt de inglês, francês e espanhol mudou (leitura IPA, sem artigo), mas a versão continuou 4. Como a versão faz parte da chave do banco, palavras geradas antes continuariam saindo no formato antigo | Prompt do Módulo 2 na versão 5 |
+| Colunas do banco | `pinyin` e `frase_pinyin` guardavam hiragana e IPA de cinco idiomas | Renomeadas para `leitura` e `frase_leitura` por uma migração que não perde dados |
+| Francês e espanhol sem artigo | "la pomme" virou "pomme" (o artigo atrapalhava a lacuna), mas o artigo é como o estudante aprende o gênero | Campo `genero` (m/f) pedido à IA e validado pelo código; aparece como "pomme (f.)" e "substantivo feminino" |
+| Painel | O acesso era liberado pelo e-mail da conta sem conferir se o e-mail foi verificado: qualquer pessoa poderia criar uma conta com o e-mail de uma administradora | Só entra e-mail verificado (o login com Google já vem verificado) |
+| Botões do estudo | Viraram "Difícil / Médio / Fácil", mas continuavam ligados a Errei / Difícil / Bom no FSRS: quem lembrava com esforço e apertava "Difícil" perdia o progresso da carta | Mantidos os nomes, mudado o efeito: Difícil = Hard, Médio = Good, Fácil = Easy. **Decisão consciente:** não há botão de "errei", então o FSRS pode superestimar o que a pessoa sabe |
+| Sessão de estudo | Cartas não voltavam mais na sessão (para ela terminar) | Carta marcada como "Difícil" volta uma vez no fim; as outras saem |
+| Carta Palavra → Áudio | Ao tirar o botão de áudio repetido do verso, a leitura saiu junto | A leitura voltou ao verso |
+| Eventos | O campo livre `payload` não tinha limite, e a contagem do limite por minuto não usava os índices | Payload até 2.000 caracteres; consulta pela coluna certa |
+
+O resto foi aprovado sem mudanças: os perfis por idioma, o Módulo 1 por idioma, a validação de idioma e nível na rota, a fila durável de eventos (que não guarda dado pessoal de quem não tem conta) e o sistema de tipografia das cartas. Lição registrada: **ferramentas diferentes de IA erram em lugares diferentes**, e a revisão com testes é o que segura a qualidade, não a ferramenta.
+
+---
+
+## Aba "Progresso": métricas pessoais e análise com IA (18/11)
+Uma aba própria no menu, **Progresso**, com as métricas de estudo de quem usa. Decisão de produto: os números ficam só ali, para quem procurar; o resto do app continua sem métricas.
+
+- **O que mostra:** dias seguidos de estudo, cartas respondidas por dia (14 dias), revisões previstas para os próximos 7 dias (a partir das datas que o FSRS já calcula), domínio por baralho (cartas novas, aprendendo e firmes, com "firme" = memória de 21 dias ou mais, a convenção "madura" do Anki) e os pontos fracos: as palavras que mais recebem "Difícil", com o tipo de carta em que mais pesam e um botão **"Estudar só essas"**.
+- **A peça que faltava era o histórico.** Cada carta guardava só o estado atual do FSRS; para contar cartas por dia ou achar o que a pessoa marca como "Difícil", é preciso um registro de cada resposta. A tabela `revisoes` entrou no mesmo esquema de adaptadores, então funciona igual sem conta (navegador) e com conta (Postgres, com `user_id`). Apagar uma palavra apaga o histórico dela.
+- **Análise com IA (cobre o requisito de análise de dados com IA):** um botão manda ao Gemini só estatísticas agregadas (sem IDs, sem nada que identifique a pessoa) e recebe, em formato obrigatório, um resumo, padrões e sugestões de prática. O prompt proíbe afirmar o que não está nos números, e com menos de 20 respostas a IA nem é chamada: não há base, e a cota fica poupada.
+- **Gráficos:** forma escolhida pela função do dado (barras para quantidade por dia, barra segmentada para etapas, números em destaque para sequência e proporções), escala de um tom de azul validada por um script de acessibilidade (distinguível com daltonismo), dica ao passar o mouse ou focar com o teclado, e uma tabela "Ver os números" em cada gráfico.
+- **Testes:** `npm run testar:progresso` (26 verificações): fuso de São Paulo, sequência que não quebra antes do dia acabar, previsão com cartas atrasadas, etapas, pontos fracos sem palavras apagadas, o resumo para a IA sem IDs, a limpeza da resposta da IA e o registro de revisões no repositório.
 
 ---
 

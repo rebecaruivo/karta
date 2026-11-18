@@ -9,7 +9,10 @@ import { useEffect, useRef, useState } from "react";
 import { facetasDe, obterRepo } from "@/lib/v2/cliente";
 import { CATALOGO_PONTES } from "@/lib/v2/pontes";
 import { obterModoAudio, usaGravacao, usaVozDoNavegador } from "@/lib/preferencias";
-import { idiomaV2, leituraDe, textoParaVoz } from "@/lib/v2/idiomas.js";
+import {
+  idiomaV2, leituraDe, leituraParaExibir, textoParaVoz, generoCurto, classeComGenero,
+  tipografiaDe, tamanhoDoAlvo, corpoDaFrase, corpoDoSignificado, corpoDaLeitura,
+} from "@/lib/v2/idiomas.js";
 
 const PONTE = Object.fromEntries(CATALOGO_PONTES.map((p) => [p.id, p]));
 const parar = (e) => e.stopPropagation(); // clicar num botão não vira a carta
@@ -73,14 +76,6 @@ function BotaoOuvirFrase({ faceta, texto, codigoVoz }) {
   );
 }
 
-function BotaoOuvirPalavra({ faceta, texto, codigoVoz }) {
-  return (
-    <button className="v2-tb" onClick={(e) => { parar(e); tocar(faceta, texto, false, () => {}, codigoVoz); }}>
-      <IconeSom /> Ouvir
-    </button>
-  );
-}
-
 // Tooltip: mouse no computador (CSS), toque no celular (estado), foco pelo teclado (CSS)
 function Dica({ rotulo, texto }) {
   const [aberto, setAberto] = useState(false);
@@ -100,68 +95,92 @@ function Dica({ rotulo, texto }) {
 }
 
 // Frase com a palavra destacada ou com a lacuna, a partir de cloze_indices [início, fim)
-function Frase({ sentence, modo, tamanho = 30, cfg }) {
+function Frase({ sentence, modo, cfg }) {
   const chars = Array.from(sentence.value);
   const [ini, fim] = sentence.metadata?.cloze_indices || [0, 0];
   const meio = chars.slice(ini, fim).join("");
+  const t = tipografiaDe(cfg);
+  // No latim a lacuna acompanha o número de letras; no CJK ela é fixa.
+  const largura = cfg.escritaPropria
+    ? undefined
+    : { width: `${Math.max(2, Array.from(meio.replace(/\s/g, "")).length)}ch` };
   return (
-    <p className={cfg.escritaPropria ? "v2-cjk" : ""} lang={cfg.codigoVoz} style={{ fontSize: tamanho, margin: 0 }}>
+    <p className={`v2-frase ${cfg.escritaPropria ? "v2-cjk" : ""}`} lang={cfg.codigoVoz}
+      style={{ fontSize: corpoDaFrase(cfg), fontWeight: t.frase.peso, lineHeight: t.frase.entrelinha, letterSpacing: t.frase.espacamento, margin: 0 }}>
       {chars.slice(0, ini).join("")}
-      {modo === "lacuna" ? <span className="v2-bl" aria-label="lacuna" /> : <mark>{meio}</mark>}
+      {modo === "lacuna" ? <span className="v2-bl" aria-label="lacuna" style={largura} /> : <mark>{meio}</mark>}
       {chars.slice(fim).join("")}
     </p>
   );
 }
 
-const Escrita = ({ texto, tamanho = 72, cfg }) => (
-  <span className={cfg.escritaPropria ? "v2-cjk" : ""} lang={cfg.codigoVoz} style={{ fontSize: tamanho, lineHeight: 1 }}>{texto}</span>
+const Escrita = ({ texto, cfg }) => {
+  const t = tipografiaDe(cfg);
+  return (
+    <span className={`v2-alvo ${cfg.escritaPropria ? "v2-cjk" : ""}`} lang={cfg.codigoVoz}
+      style={{ fontSize: tamanhoDoAlvo(texto, cfg), fontWeight: t.alvo.peso, lineHeight: t.alvo.entrelinha, letterSpacing: t.alvo.espacamento }}>
+      {texto}
+    </span>
+  );
+};
+const Significado = ({ texto, cfg }) => (
+  <h2 className="v2-h" lang="pt-BR" style={{ margin: 0, fontSize: corpoDoSignificado(cfg), fontWeight: 600, lineHeight: 1.15 }}>{texto}</h2>
 );
-const Significado = ({ texto }) => (<h2 className="v2-h" style={{ margin: 0, fontSize: 44, fontWeight: 600, lineHeight: 1.1 }}>{texto}</h2>);
+const Leitura = ({ texto, cfg, frase = false }) => (
+  <p className={`v2-sub v2-leitura ${cfg.escritaPropria ? "v2-cjk" : ""}`} lang={cfg.codigoVoz} style={{ fontSize: corpoDaLeitura(cfg, { frase }), lineHeight: 1.3, margin: 0 }}>{texto}</p>
+);
 
 function Faces({ ponte, f, virada, lenta, setLenta, auto, comAudio, cfg }) {
   const { word, meaning, sentence, audioPalavra, audioFrase } = f;
-  const leitura = leituraDe(word.metadata);
+  const leitura = leituraParaExibir(leituraDe(word.metadata), cfg);
   const leituraFrase = leituraDe(sentence.metadata);
-  const temLeitura = cfg.temLeitura && Boolean(leitura);
+  const temLeitura = Boolean(leitura);
+  const genero = generoCurto(word.metadata); // "f." / "m." em francês e espanhol
+  const comGenero = genero ? ` (${genero})` : "";
   const textoPalavra = textoParaVoz(word.value, word.metadata, cfg);
   const textoFrase = textoParaVoz(sentence.value, sentence.metadata, cfg);
-  const ouvir = comAudio && audioPalavra ? <BotaoOuvirPalavra faceta={audioPalavra} texto={textoPalavra} codigoVoz={cfg.codigoVoz} /> : null;
-  const ouvirFrase = comAudio && audioFrase ? <BotaoOuvirFrase faceta={audioFrase} texto={textoFrase} codigoVoz={cfg.codigoVoz} /> : null;
-  const pronuncia = temLeitura
-    ? <p className="v2-sub" lang={cfg.codigoVoz} style={{ fontSize: 20, margin: 0 }}>{leitura}</p>
-    : ouvir;
+  // Nos idiomas latinos o verso não repete o áudio (exceto em Palavra → Áudio,
+  // que é o próprio exercício de pronúncia).
+  const ouvirFrase = comAudio && cfg.escritaPropria && audioFrase
+    ? <BotaoOuvirFrase faceta={audioFrase} texto={textoFrase} codigoVoz={cfg.codigoVoz} />
+    : null;
+  // Texto em português usa a escala latina, mesmo quando o idioma-alvo é CJK.
+  const tPt = tipografiaDe({ escritaPropria: false });
+  const estiloPt = { fontSize: corpoDaFrase({ escritaPropria: false }), fontWeight: tPt.frase.peso, lineHeight: tPt.frase.entrelinha, margin: 0 };
 
   switch (ponte) {
     case "AUDIO_TO_WORD": return {
       frente: { centro: <BotaoPlay faceta={audioPalavra} texto={textoPalavra} autoTocar={auto && !virada} codigoVoz={cfg.codigoVoz} /> },
-      verso: { centro: <><Escrita texto={word.value} tamanho={64} cfg={cfg} />{pronuncia}</>, base: <Dica rotulo="Ver tradução" texto={meaning.value} /> },
+      verso: { centro: <><Escrita texto={word.value} cfg={cfg} />{temLeitura && <Leitura texto={leitura} cfg={cfg} />}</>, base: <Dica rotulo="Ver tradução" texto={meaning.value} /> },
     };
     case "AUDIO_TO_MEANING": return {
       frente: { centro: <BotaoPlay faceta={audioPalavra} texto={textoPalavra} autoTocar={auto && !virada} codigoVoz={cfg.codigoVoz} /> },
-      verso: { centro: <><Significado texto={meaning.value} /><p className={`v2-sub ${cfg.escritaPropria ? "v2-cjk" : ""}`} lang={cfg.codigoVoz} style={{ fontSize: 20, margin: 0 }}>{word.value}{temLeitura ? ` · ${leitura}` : ""}</p>{!temLeitura && ouvir}</> },
+      verso: { centro: <><Significado texto={meaning.value} cfg={cfg} /><p className={`v2-sub ${cfg.escritaPropria ? "v2-cjk" : ""}`} lang={cfg.codigoVoz} style={{ fontSize: corpoDaLeitura(cfg), margin: 0 }}>{word.value}{comGenero}{temLeitura ? ` · ${leitura}` : ""}</p></> },
     };
     case "WORD_TO_AUDIO": return {
       frente: { centro: <Escrita texto={word.value} cfg={cfg} /> },
-      verso: { centro: <BotaoPlay faceta={audioPalavra} texto={textoPalavra} autoTocar={auto && virada} codigoVoz={cfg.codigoVoz} />, base: pronuncia },
+      // O botão de áudio não se repete embaixo, mas a leitura sim: é como conferir a pronúncia por escrito
+      // (o catálogo de pontes prevê a leitura no verso desta carta).
+      verso: { centro: <BotaoPlay faceta={audioPalavra} texto={textoPalavra} autoTocar={auto && virada} codigoVoz={cfg.codigoVoz} />, base: temLeitura ? <Leitura texto={leitura} cfg={cfg} /> : null },
     };
     case "MEANING_TO_SENTENCE": return {
-      frente: { centro: <p className="v2-h" style={{ fontSize: 30, fontWeight: 500, margin: 0 }}>{sentence.metadata.translation}</p> },
-      verso: { centro: <><Frase sentence={sentence} modo="destaque" cfg={cfg} />{leituraFrase && <p className="v2-sub" lang={cfg.codigoVoz} style={{ fontSize: 16, margin: 0 }}>{leituraFrase}</p>}</>, base: ouvirFrase },
+      frente: { centro: <p className="v2-frase-pt" lang="pt-BR" style={{ ...estiloPt, textWrap: "balance" }}>{sentence.metadata.translation}</p> },
+      verso: { centro: <><Frase sentence={sentence} modo="destaque" cfg={cfg} />{leituraFrase && <Leitura texto={leituraFrase} cfg={cfg} frase />}</>, base: ouvirFrase },
     };
     case "SENTENCE_AUDIO_TO_SENTENCE": return {
       frente: {
         centro: <BotaoPlay key={lenta ? "lenta" : "normal"} faceta={audioFrase} texto={textoFrase} lenta={lenta} autoTocar={auto && !virada} codigoVoz={cfg.codigoVoz} />,
         base: (<div className="v2-sg" onClick={parar}><button className={lenta ? "" : "on"} onClick={() => setLenta(false)}>Normal</button><button className={lenta ? "on" : ""} onClick={() => setLenta(true)}>Lenta</button></div>),
       },
-      verso: { centro: <><Frase sentence={sentence} modo="destaque" tamanho={28} cfg={cfg} />{leituraFrase && <p className="v2-sub" lang={cfg.codigoVoz} style={{ fontSize: 15, margin: 0 }}>{leituraFrase}</p>}</>, base: <Dica rotulo="Ver tradução" texto={sentence.metadata.translation} /> },
+      verso: { centro: <><Frase sentence={sentence} modo="destaque" cfg={cfg} />{leituraFrase && <Leitura texto={leituraFrase} cfg={cfg} frase />}</>, base: <Dica rotulo="Ver tradução" texto={sentence.metadata.translation} /> },
     };
     case "CLOZE_SENTENCE_TO_WORD": return {
-      frente: { centro: <><Frase sentence={sentence} modo="lacuna" cfg={cfg} /><p className="v2-sub" style={{ fontSize: 17, margin: 0 }}>{sentence.metadata.translation}</p></> },
-      verso: { centro: <><Frase sentence={sentence} modo="destaque" cfg={cfg} /><p className="v2-sub" style={{ fontSize: 16, margin: 0 }}><span className={cfg.escritaPropria ? "v2-cjk" : ""} lang={cfg.codigoVoz}>{word.value}</span>{temLeitura ? ` · ${leitura}` : ""} · {meaning.value}</p>{!temLeitura && ouvir}</>, base: ouvirFrase },
+      frente: { centro: <><Frase sentence={sentence} modo="lacuna" cfg={cfg} /><p className="v2-sub" lang="pt-BR" style={{ fontSize: corpoDaLeitura(cfg), margin: 0 }}>{sentence.metadata.translation}</p></> },
+      verso: { centro: <><Frase sentence={sentence} modo="destaque" cfg={cfg} /><p className={`v2-sub ${cfg.escritaPropria ? "v2-cjk" : ""}`} lang="pt-BR" style={{ fontSize: corpoDaLeitura(cfg), margin: 0 }}><span lang={cfg.codigoVoz} style={{ fontWeight: tipografiaDe(cfg).alvo.peso }}>{word.value}</span>{comGenero}{temLeitura ? ` · ${leitura}` : ""} · {meaning.value}</p></>, base: ouvirFrase },
     };
     case "WORD_TO_MEANING": return {
       frente: { centro: <Escrita texto={word.value} cfg={cfg} /> },
-      verso: { centro: <><Significado texto={meaning.value} /><p className="v2-sub" style={{ fontSize: 16, margin: 0 }}>{word.metadata?.pos}</p>{!temLeitura && ouvir}</> },
+      verso: { centro: <><Significado texto={meaning.value} cfg={cfg} /><p className="v2-sub" lang="pt-BR" style={{ fontSize: 16, margin: 0 }}>{classeComGenero(word.metadata)}</p></> },
     };
     default: return { frente: { centro: "?" }, verso: { centro: "?" } };
   }

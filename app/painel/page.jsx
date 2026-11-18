@@ -1,15 +1,10 @@
 import { notFound } from "next/navigation";
 import { usuarioAtual } from "@/lib/auth/server";
+import { ehAdmin } from "@/lib/auth/admin";
 import { coletarMetricas } from "@/lib/v2/metricas";
 
 export const dynamic = "force-dynamic";
 
-function permitidos() {
-  return (process.env.ADMIN_EMAILS ?? "")
-    .split(",")
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean);
-}
 
 const TINTA = "#1D1B2E";
 const AZUL = "#3B6FE0";
@@ -96,7 +91,7 @@ function Funil({ etapas }) {
 
 export default async function Painel() {
   const usuario = await usuarioAtual();
-  if (!usuario || !permitidos().includes((usuario.email ?? "").toLowerCase())) notFound();
+  if (!ehAdmin(usuario)) notFound();
 
   if (!process.env.DATABASE_URL) return <p>Banco não configurado (DATABASE_URL ausente).</p>;
 
@@ -121,7 +116,7 @@ export default async function Painel() {
           <Cartao titulo="Cadastros" valor={fmt(m.contas)} nota={`${fmt(m.novas)} nos últimos 7 dias`} />
           <Cartao titulo="Com baralho" valor={fmt(m.ativacao.logado)} nota="ativação" />
           <Cartao titulo="Estudaram (7d)" valor={fmt(m.wau.logado)} nota="cartas respondidas ou revisão recente" />
-          <Cartao titulo="Acerto" valor={pct(m.taxas.pctDecoreiLogado)} nota={`${pct(m.taxas.pctNaoLogado)} “difícil” · 30 dias`} />
+          <Cartao titulo="Respostas “Fácil”" valor={pct(m.taxas.pctDecoreiLogado)} nota={`${pct(m.taxas.pctNaoLogado)} “Difícil” · 30 dias`} />
         </div>
       </Secao>
 
@@ -129,7 +124,7 @@ export default async function Painel() {
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
           <Cartao titulo="Com baralho" valor={fmt(m.ativacao.anonimo)} nota="criou ao menos um baralho" />
           <Cartao titulo="Estudaram (7d)" valor={fmt(m.wau.anonimo)} nota="cartas respondidas" />
-          <Cartao titulo="Acerto" valor={pct(m.taxas.pctDecoreiAnonimo)} nota={`${pct(m.taxas.pctNaoAnonimo)} “difícil” · 30 dias`} />
+          <Cartao titulo="Respostas “Fácil”" valor={pct(m.taxas.pctDecoreiAnonimo)} nota={`${pct(m.taxas.pctNaoAnonimo)} “Difícil” · 30 dias`} />
         </div>
       </Secao>
 

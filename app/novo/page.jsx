@@ -179,7 +179,6 @@ export default function NovoBaralhoV2() {
       <input type="checkbox" checked={comAudio} onChange={(e) => setComAudio(e.target.checked)} style={{ marginTop: 4 }} />
       <span><strong>Incluir exercícios de áudio</strong><br />
         <span className="mu">{comAudio ? "7 cartas por palavra, incluindo as de escuta e pronúncia." : "3 cartas por palavra (palavra, frase e lacuna), sem exercícios de escuta."}</span>
-        {!comAudio && !cfg.temLeitura && <><br /><span className="erro">Neste idioma, sem áudio não há pronúncia.</span></>}
       </span>
     </label>
   );
