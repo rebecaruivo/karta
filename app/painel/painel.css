@@ -1,0 +1,45 @@
+/* Painel de produto (admin). Mesma linguagem visual da aba Progresso. */
+.pn { max-width: 960px; margin: 0 auto; }
+.pn h2 { font: 600 18px Outfit, sans-serif; margin: 0 0 4px; }
+.pn-sub { margin: 0 0 16px; font-size: 14px; }
+.pn-cab { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+.pn-cab h1 { margin-bottom: 4px; }
+.pn-hora { font-size: 13px; }
+.pn-sec { margin-bottom: 44px; }
+.pn-duas { display: grid; gap: 32px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.pn h3 { font: 600 15px Figtree, sans-serif; margin: 0 0 12px; }
+
+/* Barras empilhadas por dia: com conta embaixo (escuro), sem conta em cima (claro), 2px entre os pedaços */
+.pn-barras { display: flex; align-items: flex-end; gap: 3px; height: 170px; border-bottom: 1px solid var(--linha); }
+.pn-col { flex: 1; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; position: relative; outline: none; }
+.pn-seg { width: 100%; }
+.pn-col > .pn-seg:nth-child(2) { border-radius: 4px 4px 0 0; }
+.pn-col > .pn-seg:only-of-type { border-radius: 4px 4px 0 0; }
+.pn-dica { display: none; position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: #0F1B2D; color: #fff; font: 500 12px/1.45 Figtree, sans-serif; padding: 6px 10px; border-radius: 6px; white-space: nowrap; z-index: 2; pointer-events: none; }
+.pn-col:hover .pn-dica, .pn-col:focus-visible .pn-dica { display: block; }
+.pn-barras:hover .pn-col:not(:hover) .pn-seg { opacity: .55; }
+.pn-col:focus-visible { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #1E4FD8; border-radius: 4px; }
+.pn-col:first-child .pn-dica, .pn-col:nth-child(2) .pn-dica { left: 0; transform: none; }
+.pn-col:last-child .pn-dica, .pn-col:nth-last-child(2) .pn-dica { left: auto; right: 0; transform: none; }
+
+/* Tabela comparativa */
+.pn-tab { width: 100%; border-collapse: collapse; font-size: 14px; }
+.pn-tab th, .pn-tab td { padding: 11px 12px; border-bottom: 1px solid var(--linha); text-align: right; font-variant-numeric: tabular-nums; }
+.pn-tab th:first-child, .pn-tab td:first-child { text-align: left; padding-left: 0; }
+.pn-tab thead th { font-weight: 600; font-size: 13px; color: var(--suave); }
+.pn-tab td small { display: block; color: var(--suave); font-size: 12px; }
+.pn-tab td.pn-v { font-weight: 600; white-space: nowrap; }
+
+/* Barras horizontais (funil e idiomas) */
+.pn-hs { display: grid; gap: 12px; }
+.pn-h-cab { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; margin-bottom: 5px; }
+.pn-h-cab span:last-child { font-variant-numeric: tabular-nums; }
+.pn-h-trilho { height: 10px; background: var(--fundo-carta); border-radius: 4px; }
+.pn-h-barra { height: 10px; background: #2246BE; border-radius: 4px; min-width: 4px; }
+.pn-conv { font-size: 12px; margin: 4px 0 0; }
+
+.pn-notas { font-size: 13px; }
+.pn-notas summary { cursor: pointer; }
+.pn-notas ul { margin: 8px 0 0; padding-left: 18px; display: grid; gap: 4px; }
+.pn-tab th:not(:first-child), .pn-tab td:not(:first-child) { width: 24%; }
+@media (max-width: 560px) { .pn-tab { font-size: 13px; } .pn-tab th, .pn-tab td { padding: 9px 6px; } }

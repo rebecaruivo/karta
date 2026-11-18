@@ -429,6 +429,19 @@ Em **Configurações → Baralhos novos**, a pessoa escolhe o que cada palavra t
 
 ---
 
+## Painel de admin refinado (18/11)
+O painel (`/painel`, só para administradoras) foi refeito por dentro e por fora.
+
+- **Mesma linguagem visual da aba Progresso:** os estilos saíram do código (eram cores soltas, escritas direto nos componentes) para uma folha própria, e as cores passaram a ser a mesma escala de azul validada para daltonismo. Escuro = com conta, claro = sem conta.
+- **Estrutura pensada para quem decide:** primeiro quatro números de cabeçalho (quem estudou na semana, cartas respondidas com a variação sobre a semana anterior, baralhos criados, contas); depois o gráfico por dia; depois uma **tabela comparativa** com conta × sem conta (antes eram dois blocos de cartões repetidos, difíceis de comparar).
+- **Funil com conversão:** cada etapa mostra quanto passou da anterior ("64% da etapa anterior"), que é o número que importa num funil. Com zero na etapa anterior não aparece um "0%" enganoso.
+- **Banco de palavras no painel:** palavras guardadas, quantas vezes foram reaproveitadas (cada reaproveitamento é uma palavra entregue sem chamar a IA) e, a partir de agora, que fração das palavras dos baralhos novos veio do banco. Para isso o evento `baralho_criado` passou a levar `n_do_banco`. É a métrica que mostra a economia de tokens.
+- **Baralhos por idioma** nos últimos 30 dias.
+- **Gráfico acessível sem JavaScript:** a página é um componente de servidor, então a dica das barras aparece só com CSS, com mouse ou teclado (Tab). Cada gráfico tem "Ver os números".
+- **Testável:** a transformação dos números brutos no que a tela mostra virou funções puras (`lib/v2/painel.js`), com `npm run testar:painel` (14 verificações). A parte visual ficou num componente separado, o que permitiu renderizar a tela com dados de exemplo e conferir o resultado no navegador antes de publicar.
+
+---
+
 ## Próximas etapas
 - [x] Áudio de cada carta (Gemini TTS, com a voz do navegador como plano B)
 - [x] Exportação `.apkg` para o Anki

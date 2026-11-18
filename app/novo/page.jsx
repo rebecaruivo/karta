@@ -170,7 +170,7 @@ export default function NovoBaralhoV2() {
       registrarEvento("baralho_criado", {
         deck_id: deck.id,
         idioma,
-        payload: { creation_mode, level: nivel, n_palavras: criadas.palavras, n_cartas: criadas.cartas },
+        payload: { creation_mode, level: nivel, n_palavras: criadas.palavras, n_cartas: criadas.cartas, n_do_banco: dados.doBanco ?? 0 },
       });
       router.push(`/baralho/${deck.id}${dados.doBanco ? `?doBanco=${dados.doBanco}` : ""}`);
     } catch (err) {
