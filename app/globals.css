@@ -13,10 +13,12 @@ a { color: inherit; text-decoration: none; }
 .z { font-family: 'Noto Serif SC', serif; }
 .mu { color: var(--suave); font-size: 14px; }
 
-.topo { display: flex; align-items: center; justify-content: space-between; padding: 20px 32px; border-bottom: 1px solid var(--linha); }
-.marca { font-size: 24px; font-weight: 700; }
+.topo { display: flex; align-items: center; justify-content: space-between; gap: 32px; padding: 20px 32px; border-bottom: 1px solid var(--linha); }
+.marca { font-size: 24px; font-weight: 700; flex: none; }
 .topo nav a { font-weight: 600; }
-.nav-topo { display: flex; gap: 20px; align-items: center; }
+.nav-topo { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px 20px; align-items: center; min-width: 0; }
+/* Em telas médias (tablet, celular deitado) o e-mail da conta some para os links caberem ao lado da marca */
+@media (max-width: 960px) { .menu-conta-nome { display: none; } }
 .nav-topo-link[aria-current="page"] { text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 2px; }
 .nav-inf { display: none; }
 .conteudo { max-width: 1040px; margin: 0 auto; padding: 32px 24px 64px; }
