@@ -423,6 +423,10 @@ Em **Configurações → Baralhos novos**, a pessoa escolhe o que cada palavra t
 - **Por que a frase continua sendo gerada mesmo desligada:** o banco de palavras é compartilhado e a pessoa pode religar a faceta depois. Só as cartas somem; o custo de gerar é o mesmo, já que a frase sai na mesma chamada.
 - **Testes:** novos blocos em `testar:v2` (contagens 7/3/4/1, baralho legado, ligar e desligar frase e áudio em sequência até voltar às 7 cartas).
 
+**Ajustes depois do teste (18/11):**
+- **A escolha veio para antes das sugestões.** Ela aparecia só depois que a IA sugeria as palavras; agora fica junto de idioma e nível, antes de "Sugerir palavras". Sobre economia: a frase sai na mesma chamada que a tradução e vai para o banco compartilhado, então desligar a frase não muda o custo da IA. O que economiza de fato é o áudio, porque as gravações só são geradas em baralhos com áudio ligado.
+- **Sem pronúncia escrita (IPA) em inglês, francês e espanhol.** A leitura escrita fica só onde a escrita não diz como se fala: mandarim (pinyin) e japonês (hiragana). Nas línguas latinas o IPA, como /flœʁ/, mais confundia do que ajudava. Isso sim economiza tokens: o schema desses idiomas deixou de pedir `leitura` e `frase_leitura`, então a IA escreve menos por palavra. Baralhos antigos que guardaram IPA simplesmente não o mostram mais, e a exportação para o Anki desses idiomas sai sem os campos de leitura. A versão do prompt não subiu: o resultado só perdeu um campo ignorado, e subir a versão faria o banco gerar de novo também mandarim e japonês, que não mudaram.
+
 ---
 
 ## Próximas etapas

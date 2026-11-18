@@ -132,8 +132,9 @@ const Leitura = ({ texto, cfg, frase = false }) => (
 
 function Faces({ ponte, f, virada, lenta, setLenta, auto, comAudio, cfg }) {
   const { word, meaning, sentence, audioPalavra, audioFrase } = f;
-  const leitura = leituraParaExibir(leituraDe(word.metadata), cfg);
-  const leituraFrase = leituraDe(sentence.metadata);
+  // Baralhos antigos de inglês/francês/espanhol ainda têm IPA guardado; só mostra se o idioma usa leitura
+  const leitura = cfg.temLeitura ? leituraParaExibir(leituraDe(word.metadata), cfg) : "";
+  const leituraFrase = cfg.temLeitura ? leituraDe(sentence.metadata) : "";
   const temLeitura = Boolean(leitura);
   const genero = generoCurto(word.metadata); // "f." / "m." em francês e espanhol
   const comGenero = genero ? ` (${genero})` : "";

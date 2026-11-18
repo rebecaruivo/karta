@@ -162,7 +162,7 @@ await pg.guardar([{ chave: "k1", resposta: { ...respostaChá, sentence: "她喝�
 conferir(tabela.get("k1").frase === "她喝茶。" && tabela.get("k1").usos === 1, "\"Gerar de novo\" substitui a versão e mantém a contagem de usos");
 
 console.log("\n— Gênero (francês e espanhol) e versão do prompt");
-conferir(VERSAO_PROMPT === 5, "prompt do Módulo 2 na versão 5 (leitura IPA, sem artigo, com gênero)");
+conferir(VERSAO_PROMPT === 5, "prompt do Módulo 2 na versão 5 (sem artigo, com gênero; IPA retirado sem trocar a versão)");
 conferir(chavePalavra({ versao: VERSAO_PROMPT, language: "fr", level: "A1", gloss: "maçã" }).startsWith("m2:v5:fr:"), "a versão nova entra na chave do banco: palavras antigas não são servidas no formato novo");
 conferir(instrucaoM2(idiomaV2("fr")).includes('"genero"') && !instrucaoM2(idiomaV2("zh")).includes('"genero"'), "o prompt pede o gênero só nos idiomas que têm gênero");
 const pomme = montarPalavraEnriquecida({ id: "w1", gloss: "maçã" }, { lemma: "pomme", leitura: "/pɔm/", pos: "substantivo", genero: "F", meaning: "maçã", sentence: "Je mange une pomme.", target_in_sentence: "pomme", frase_leitura: "/ʒə mɑ̃ʒ yn pɔm/", sentence_translation: "Eu como uma maçã." }, { deck_id: "d", language: "fr", origin: "user" });
@@ -432,20 +432,20 @@ console.log("\n— Perfis de idioma da v2");
 conferir(IDIOMAS_V2_LISTA.length === 5 && IDIOMAS_V2_LISTA.map((i) => i.codigo).join() === "zh,ja,en,fr,es", "cinco perfis: mandarim, japonês, inglês, francês e espanhol");
 conferir(idiomaV2("mandarim").codigo === "zh" && idiomaV2("fr").codigo === "fr", "aceita o código ISO e a chave da configuração antiga");
 conferir(idiomaV2("zh").niveis[0] === "HSK 1" && idiomaV2("ja").niveis[0] === "N5" && idiomaV2("fr").niveis[0] === "A1", "níveis por idioma: HSK, JLPT e CEFR");
-conferir(IDIOMAS_V2_LISTA.every((i) => i.temLeitura), "todos os idiomas têm apoio de leitura (pinyin/hiragana ou IPA)");
+conferir(IDIOMAS_V2_LISTA.filter((i) => i.temLeitura).map((i) => i.codigo).join(",") === "zh,ja", "só mandarim e japonês têm leitura escrita (sem IPA nas línguas latinas)");
 conferir(idiomaV2("zh").codigoTts === "zh_CN" && idiomaV2("ja").codigoTts === "ja_JP" && idiomaV2("fr").codigoTts === "fr_FR", "código de voz do Anki por idioma");
 
 console.log("\n— Escrita e leitura por idioma");
 conferir(igual(lerPalavras("la pomme, look for, la manzana", { target_language: "fr", level: "A1" }).wordList.words.map((w) => w.gloss), ["la pomme", "look for", "la manzana"]), "porta de entrada aceita palavras com espaço (artigo e phrasal verb)");
 const validacaoLatina = (extra = {}) => validarIdioma({ lemma: "pomme", leitura: "/pɔm/", frase_leitura: "/ʒə mɑ̃ʒ la pɔm/", pos: "substantivo", meaning: "maçã", sentence: "Je mange la pomme.", target_in_sentence: "pomme", sentence_translation: "Eu como a maçã.", ambiguous: false, other_senses: "", level_fit: true, note: "", ...extra }, idiomaV2("fr"));
-conferir(validacaoLatina().length === 0, "francês · palavra sem artigo e IPA passam sem problemas");
-conferir(validacaoLatina({ leitura: "" }).some((p) => p.includes("sem leitura")), "francês · palavra sem IPA é recusada");
+conferir(validacaoLatina().length === 0, "francês · palavra sem artigo passa sem problemas");
+conferir(validacaoLatina({ leitura: undefined, frase_leitura: undefined }).length === 0, "francês · palavra sem IPA também passa (IPA não é mais pedido)");
 conferir(validacaoLatina({ sentence: "Je mange la pomme avec mon ami dans la cuisine de ma mère aujourd'hui." }).some((p) => p.includes("12 palavras")), "francês · frase com mais de 12 palavras é recusada");
 const japonesa = { lemma: "たべる", leitura: "たべる (taberu)", pos: "verbo", meaning: "comer", sentence: "パンを食べます。", target_in_sentence: "食べます", frase_leitura: "パンをたべます。", sentence_translation: "Eu como pão.", ambiguous: false, other_senses: "", level_fit: true, note: "" };
 conferir(validarIdioma(japonesa, idiomaV2("ja")).length === 0, "japonês · leitura em hiragana + romaji passa");
 conferir(validarIdioma({ ...japonesa, leitura: "" }, idiomaV2("ja")).some((p) => p.includes("sem leitura")), "japonês · sem leitura é recusado");
 const enriquecidaFrancesa = montarPalavraEnriquecida({ id: "w1", gloss: "maçã" }, { lemma: "pomme", leitura: "/pɔm/", frase_leitura: "/ʒə mɑ̃ʒ la pɔm/", pos: "substantivo", meaning: "maçã", sentence: "Je mange la pomme.", target_in_sentence: "pomme", sentence_translation: "Eu como a maçã.", ambiguous: false, other_senses: "", level_fit: true, note: "" }, { deck_id: "d1", language: "fr", origin: "user" });
-conferir(enriquecidaFrancesa.facets[0].metadata.leitura === "/pɔm/" && enriquecidaFrancesa.facets[2].metadata.leitura === "/ʒə mɑ̃ʒ la pɔm/", "francês · IPA fica no metadata da palavra e da frase");
+conferir(enriquecidaFrancesa.facets[0].metadata.leitura === undefined && enriquecidaFrancesa.facets[2].metadata.leitura === undefined, "francês · IPA que venha do banco antigo não entra no metadata");
 const enriquecidaJaponesa = montarPalavraEnriquecida({ id: "w1", gloss: "comer" }, japonesa, { deck_id: "d1", language: "ja", origin: "user" });
 conferir(enriquecidaJaponesa.facets[0].metadata.leitura === "たべる (taberu)" && enriquecidaJaponesa.facets[2].metadata.leitura === "パンをたべます。", "japonês · leitura fica no metadata da palavra e da frase");
 conferir(leituraDe({ pinyin: "shuǐ" }) === "shuǐ" && leituraDe({ leitura: "みず" }) === "みず", "leituraDe lê o formato antigo (pinyin) e o novo (leitura)");
@@ -454,7 +454,7 @@ conferir(textoParaVoz("水", { leitura: "みず (mizu)" }, idiomaV2("ja")) === "
 console.log("\n— Prompts por idioma");
 const promptFrances = instrucaoM2(idiomaV2("fr"));
 const promptJapones = instrucaoM2(idiomaV2("ja"));
-conferir(promptFrances.includes('"leitura"') && promptFrances.includes("IPA") && promptFrances.includes("12 palavras") && promptFrances.includes("sem artigo"), "prompt do francês pede IPA, limita a 12 palavras e tira o artigo");
+conferir(!promptFrances.includes('"leitura"') && !promptFrances.includes("IPA") && promptFrances.includes("12 palavras") && promptFrances.includes("sem artigo"), "prompt do francês não pede IPA, limita a 12 palavras e tira o artigo");
 conferir(promptJapones.includes('"leitura"') && promptJapones.includes("hiragana") && promptJapones.includes("20 caracteres"), "prompt do japonês pede hiragana + romaji e limita a 20 caracteres");
 conferir(pedidoM2([{ id: "w1", gloss: "maçã", lemma: "pomme" }], "A1", "fr").includes("(em francês: pomme)"), "Módulo 2 recebe a palavra já escolhida no idioma certo");
 const hskNaoMandarim = conferirNoHSK([{ lemma: "pomme", gloss: "maçã" }], { pomme: 1 }, "A1", "fr");

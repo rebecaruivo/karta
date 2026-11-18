@@ -11,7 +11,7 @@ import { registrarEvento } from "@/lib/v2/eventos";
 import { cabecalhosComChave } from "@/lib/chave";
 import { obterFacetasPadrao } from "@/lib/preferencias";
 import { FACETAS_PADRAO, cartasPorPalavra } from "@/lib/v2/pontes";
-import EscolhaFacetas from "@/components/v2/EscolhaFacetas";
+import EscolhaFacetas, { resumoFacetas } from "@/components/v2/EscolhaFacetas";
 import { IDIOMAS_V2_LISTA, IDIOMA_PADRAO, idiomaV2, classeEscrita } from "@/lib/v2/idiomas.js";
 
 const CHAVE_ULTIMO_IDIOMA = "karta:v2:ultimo-idioma";
@@ -245,6 +245,7 @@ export default function NovoBaralhoV2() {
           </div>
           {seletorIdioma}
           {seletorNivel}
+          {caixaAudio}
           {caixaErro}
           {etapa ? <div className="aviso">{etapa}</div> : (
             <div><button className="btn" type="submit" disabled={Boolean(temaValido.erro)}>Sugerir palavras</button></div>
@@ -295,7 +296,7 @@ export default function NovoBaralhoV2() {
             <button type="button" className="v2-link" onClick={pedirMais} disabled={Boolean(etapa) || revisao.length >= LIMITES.maxPalavras}>+ Pedir mais {MAIS_POR_VEZ} à IA</button>
           </div>
           {campoNome}
-          {caixaAudio}
+          <p className="mu" style={{ fontSize: 13, margin: 0 }}>{resumoFacetas(facetas)} Para mudar, volte ao passo anterior.</p>
           {caixaErro}
           {etapa ? <div className="aviso">{etapa}</div> : (
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
