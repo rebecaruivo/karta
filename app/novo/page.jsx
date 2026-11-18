@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { lerPalavras, validarTema, LIMITES } from "@/lib/v2/portaEntrada";
 import { obterRepo } from "@/lib/v2/cliente";
+import { registrarEvento } from "@/lib/v2/eventos";
 import { cabecalhosComChave } from "@/lib/chave";
 import { IDIOMAS_V2_LISTA, IDIOMA_PADRAO, idiomaV2, classeEscrita } from "@/lib/v2/idiomas.js";
 
@@ -144,6 +145,11 @@ export default function NovoBaralhoV2() {
       setEtapa("Criando o baralho…");
       const deck = await repo.criarBaralho({ name: nome.trim() || theme || "Meu baralho", creation_mode, theme, target_language: idioma, level: nivel, facetas_opcionais: comAudio ? ["AUDIO"] : [] });
       await repo.atualizarBaralho({ ...deck, pipeline_status: "facets_in_progress" });
+      registrarEvento("baralho_iniciado", {
+        deck_id: deck.id,
+        idioma,
+        payload: { creation_mode, level: nivel, n_palavras: wordList.words.length },
+      });
 
       setEtapa(`Módulo 2: gerando as facetas de ${wordList.words.length} palavras…`);
       const resp = await fetch("/api/v2/enriquecer", { method: "POST", headers: cabecalhosComChave(), body: JSON.stringify({ wordList }) });
@@ -154,8 +160,13 @@ export default function NovoBaralhoV2() {
       }
 
       setEtapa("Módulo 3: montando as cartas…");
-      await repo.adicionarPalavras(deck.id, dados.resultados);
+      const criadas = await repo.adicionarPalavras(deck.id, dados.resultados);
       await repo.atualizarBaralho({ ...deck, pipeline_status: "cards_ready", modelo: dados.modelo, versao_prompt: dados.versaoPrompt });
+      registrarEvento("baralho_criado", {
+        deck_id: deck.id,
+        idioma,
+        payload: { creation_mode, level: nivel, n_palavras: criadas.palavras, n_cartas: criadas.cartas },
+      });
       router.push(`/baralho/${deck.id}${dados.doBanco ? `?doBanco=${dados.doBanco}` : ""}`);
     } catch (err) {
       setErro(err.message);

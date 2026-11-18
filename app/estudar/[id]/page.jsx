@@ -1,12 +1,13 @@
 "use client";
 // v2 · Sessão de estudo: todas as cartas disponíveis, embaralhadas + FSRS
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { obterRepo } from "@/lib/v2/cliente";
 import { montarFila, espacarPalavras } from "@/lib/v2/sessao";
 import { responder, RESPOSTAS } from "@/lib/v2/srs";
 import Carta from "@/components/v2/Carta";
+import { registrarEvento } from "@/lib/v2/eventos";
 
 const VOLTA_NA_SESSAO_MS = 20 * 60 * 1000; // carta que volta em até 20 min reaparece nesta sessão
 
@@ -19,6 +20,7 @@ export default function EstudarV2() {
   // parada: carta nova volta em 10 min (passo de fixação do FSRS) e reaparece na mesma sessão.
   const [vistas, setVistas] = useState(() => new Set());
   const [virada, setVirada] = useState(false);
+  const inicioCarta = useRef(Date.now());
 
   useEffect(() => {
     obterRepo().then((r) => r.carregarBaralho(id)).then((d) => {
@@ -26,11 +28,20 @@ export default function EstudarV2() {
       if (!d) return;
       const f = montarFila(d.cartas);
       setFila(f); setTotal(f.length);
+      if (f.length) registrarEvento("sessao_iniciada", { deck_id: id, idioma: d.deck.target_language });
     });
   }, [id]);
 
   async function avaliar(resposta) {
     const carta = fila[0];
+    registrarEvento("carta_respondida", {
+      deck_id: id,
+      card_id: carta.id,
+      concept_id: carta.concept_id,
+      rating: resposta,
+      duracao_ms: Date.now() - inicioCarta.current,
+      idioma: dados.deck.target_language,
+    });
     const nova = responder(carta, resposta);
     await (await obterRepo()).atualizarCarta(nova);
     const voltaLogo = new Date(nova.due_at) - new Date() <= VOLTA_NA_SESSAO_MS;
@@ -50,6 +61,9 @@ export default function EstudarV2() {
     window.addEventListener("keydown", tecla);
     return () => window.removeEventListener("keydown", tecla);
   });
+
+  const cabeca = fila[0]?.id;
+  useEffect(() => { inicioCarta.current = Date.now(); }, [cabeca]);
 
   if (dados === undefined) return null;
   if (dados === null) return <p>Baralho não encontrado. <Link href="/">Voltar</Link></p>;

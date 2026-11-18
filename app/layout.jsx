@@ -3,6 +3,7 @@ import "./v2.css";
 import Link from "next/link";
 import MenuConta from "@/components/MenuConta";
 import AvisoConta from "@/components/v2/AvisoConta";
+import Eventos from "@/components/v2/Eventos";
 import { authLigado } from "@/lib/auth/server";
 
 export const metadata = {
@@ -27,6 +28,7 @@ export default function RootLayout({ children }) {
           <nav style={{ display: "flex", gap: 20, alignItems: "center" }}><Link href="/">Baralhos</Link><Link href="/configuracoes">Configurações</Link><MenuConta ligado={authLigado} /></nav>
         </header>
         <main className="conteudo"><div className="v2"><AvisoConta ligado={authLigado} />{children}</div></main>
+        <Eventos />
       </body>
     </html>
   );
