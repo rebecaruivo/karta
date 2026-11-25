@@ -17,6 +17,9 @@ export default function EstudarV2() {
   // Progresso = cartas já vistas nesta sessão. Cada carta sai da fila ao ser respondida,
   // então a barra chega a 100% e a sessão termina em vez de repetir cartas sem fim.
   const [vistas, setVistas] = useState(() => new Set());
+  // Respostas dadas nesta sessão. A barra é respondidas ÷ (respondidas + o que falta na fila),
+  // então uma carta "Difícil" que volta conta como mais uma: a barra só enche quando a fila acaba.
+  const [respondidas, setRespondidas] = useState(0);
   const [virada, setVirada] = useState(false);
   // Carta marcada como "Difícil" volta UMA vez no fim da sessão (decisão de 18/11);
   // as outras saem ao serem respondidas, para a sessão terminar.
@@ -55,6 +58,7 @@ export default function EstudarV2() {
     // A carta respondida fica como "cabeça" só para a próxima não ser da mesma palavra
     setFila((f) => espacarPalavras([carta, ...f.slice(1), ...(volta ? [nova] : [])]).slice(1));
     setVistas((v) => new Set(v).add(carta.id));
+    setRespondidas((n) => n + 1);
     setVirada(false);
   }
 
@@ -90,7 +94,8 @@ export default function EstudarV2() {
 
   const carta = fila[0];
   const palavra = dados.palavras.find((p) => p.concept.id === carta.concept_id);
-  const pct = total ? Math.round((vistas.size / total) * 100) : 0;
+  const totalSessao = respondidas + fila.length;
+  const pct = totalSessao ? Math.round((respondidas / totalSessao) * 100) : 0;
   const revendo = fila.filter((c) => vistas.has(c.id)).length;
 
 
@@ -100,13 +105,15 @@ export default function EstudarV2() {
         <Link href={voltar} className="mu">← Sair</Link>
         <span className="mu estudo-nome">{dados.deck.name}</span>
         <div className="bar" style={{ flex: 1, marginTop: 0 }}><div style={{ width: `${pct}%` }} /></div>
-        <span className="mu v2-contador" title="Cartas vistas nesta sessão">{vistas.size} / {total}{revendo > 0 && ` · ${revendo} para rever`}</span>
+        <span className="mu v2-contador" title="Respostas nesta sessão. Carta marcada como Difícil volta no fim e conta de novo.">{respondidas} / {totalSessao}{revendo > 0 && ` · ${revendo} para rever`}</span>
       </div>
 
       <Carta key={carta.id + carta.reps} ponte={carta.bridge_template_id} palavra={palavra} virada={virada} aoVirar={() => setVirada((v) => !v)}
         comAudio={(dados.deck.facetas_opcionais ?? ["AUDIO"]).includes("AUDIO")} />
 
       {/* Mesmo padrão da v1: botões simples e os atalhos numa linha discreta embaixo */}
+      {/* Os botões dizem como foi LEMBRAR (e decidem quando a carta volta), não escolhem a dificuldade das perguntas */}
+      {virada && <p className="mu v2-pergunta-resp">Como foi lembrar?</p>}
       <div className="v2-botoes">
         {!virada ? (
           <button className="btn" onClick={() => setVirada(true)}>Mostrar resposta</button>

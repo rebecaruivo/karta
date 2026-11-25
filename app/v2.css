@@ -44,6 +44,7 @@
 
 /* Telas da v2 */
 .v2-botoes { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 28px; }
+.v2-pergunta-resp { text-align: center; margin: 24px 0 -14px; font-size: 14px; }
 .v2-resp { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 120px; }
 .v2-resp small { font-size: 12px; opacity: .7; font-weight: 500; }
 /* A prévia do baralho mostra miniaturas lado a lado; a carta do estudo é maior,

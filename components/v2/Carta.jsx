@@ -25,22 +25,45 @@ const IconeSom = () => (<svg width="20" height="20" viewBox="0 0 24 24" fill="no
 // gravação do Gemini, voz do navegador, ou gravação com a voz do navegador como reserva.
 // "Lenta" toca o MESMO áudio a 0,7× (decisão: não gerar um segundo arquivo).
 // Devolve false quando não há som possível (modo "só a cota" sem gravação).
+//
+// Um áudio por vez no app inteiro: tocar de novo (ou trocar de carta) para o que estava tocando.
+// Antes, cada clique criava um novo player e os sons se sobrepunham ("fala a palavra duas vezes").
+let tocandoAgora = null; // { audio, url, aoTerminar }
+let pedido = 0;          // invalida pedidos antigos que ainda estavam carregando a gravação
+export function pararAudio() {
+  pedido++;
+  if (tocandoAgora) {
+    const { audio, url, aoTerminar } = tocandoAgora;
+    tocandoAgora = null;
+    audio.onended = null;
+    audio.pause();
+    URL.revokeObjectURL(url);
+    aoTerminar?.();
+  }
+  if (typeof window !== "undefined" && "speechSynthesis" in window) window.speechSynthesis.cancel();
+}
+
 async function tocar(faceta, texto, lenta, aoTerminar, codigoVoz) {
+  pararAudio();
+  const meu = pedido;
   const velocidade = lenta ? 0.7 : 1;
   const modo = obterModoAudio();
   try {
     if (usaGravacao(modo) && faceta?.status === "ready") {
       const blob = await (await obterRepo()).obterAudio(faceta.id);
+      if (meu !== pedido) return true; // outro áudio foi pedido enquanto este carregava
       if (blob) {
         const url = URL.createObjectURL(blob);
         const audio = new Audio(url);
         audio.playbackRate = velocidade;
-        audio.onended = () => { URL.revokeObjectURL(url); aoTerminar(); };
+        tocandoAgora = { audio, url, aoTerminar };
+        audio.onended = () => { if (tocandoAgora?.audio === audio) tocandoAgora = null; URL.revokeObjectURL(url); aoTerminar(); };
         await audio.play();
         return true;
       }
     }
   } catch { /* segue para a voz do navegador */ }
+  if (meu !== pedido) return true;
   if (!usaVozDoNavegador(modo)) { aoTerminar(); return false; }
   if (typeof window === "undefined" || !("speechSynthesis" in window)) { aoTerminar(); return false; }
   const fala = new SpeechSynthesisUtterance(texto);
@@ -58,6 +81,7 @@ function BotaoPlay({ faceta, texto, lenta = false, autoTocar = false, codigoVoz 
   const [semSom, setSemSom] = useState(false);
   const play = async () => { setTocando(true); setSemSom(!(await tocar(faceta, texto, lenta, () => setTocando(false), codigoVoz))); };
   useEffect(() => { if (autoTocar) play(); }, [autoTocar]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => pararAudio(), []); // saiu da tela (próxima carta): o som para junto
   return (
     <span style={{ display: "grid", justifyItems: "center", gap: 6 }}>
       <button className={`v2-pb ${tocando ? "tocando" : ""}`} aria-label="Ouvir" onClick={(e) => { parar(e); play(); }}>
