@@ -6,6 +6,7 @@ import { GoogleGenAI } from "@google/genai";
 import { pcmParaWav, removerCertificadoC2PA } from "@/lib/wav";
 import { escolherChave, respostaSemChave } from "@/lib/chaveServidor";
 import { idiomaOpcional } from "@/lib/v2/idiomas.js";
+import { usoDaResposta, custoDaChamada } from "@/lib/v2/custos.js";
 
 export const maxDuration = 60;
 
@@ -56,8 +57,14 @@ export async function POST(request) {
         const { pcm, removidos } = removerCertificadoC2PA(Buffer.from(dados, "base64"));
         if (removidos) console.log(`[voz] ${modelo}: ${removidos} bytes de certificado C2PA removidos`);
         const wav = pcmParaWav(pcm);
+        // A resposta é o próprio áudio, então o custo da chamada vai nos cabeçalhos
+        const custo = custoDaChamada(usoDaResposta(r, modelo));
         return new Response(wav, {
-          headers: { "Content-Type": "audio/wav", "X-Modelo": modelo, "Cache-Control": "no-store" },
+          headers: {
+            "Content-Type": "audio/wav", "X-Modelo": custo.modelo, "Cache-Control": "no-store",
+            "X-Custo-Usd": custo.usd === null ? "" : String(custo.usd), "X-Tokens": String(custo.tokens),
+            ...(custo.estimado ? { "X-Custo-Estimado": "1" } : {}),
+          },
         });
       } catch (e) {
         const status = Number(e?.status) || 0;

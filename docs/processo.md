@@ -455,6 +455,29 @@ Aberto no celular, o app estava ruim: o menu do topo (Baralhos, Progresso, Confi
 
 ---
 
+## Feedback de usuária real (25/11)
+Três observações de uma pessoa testando o app, e o que cada uma revelou:
+
+1. **"O áudio fala duas vezes a palavra"** (ao apertar o play mais de uma vez). **Bug:** cada clique criava um novo player de áudio e os sons se sobrepunham. Agora há um único áudio tocando por vez no app inteiro: tocar de novo reinicia, trocar de carta para o som, e um áudio que ainda estava carregando é descartado se outro foi pedido.
+2. **"Fácil, médio e difícil não calibram as questões."** **Não era bug, era a interface enganando:** os botões dizem como foi lembrar e decidem *quando* a carta volta (FSRS); eles não escolhem a dificuldade das perguntas, e os tipos de carta de cada palavra são sempre os mesmos. A pessoa leu os botões como um ajuste de dificuldade. Primeiro passo: a pergunta "Como foi lembrar?" acima dos botões. Se a confusão continuar, o próximo passo é trocar os rótulos por algo como "Não lembrei / Com esforço / Lembrei fácil".
+3. **"A barra enche antes de acabar."** **Bug:** a barra contava cartas *diferentes* vistas sobre o total inicial, mas a carta marcada como "Difícil" volta no fim da sessão. Agora a barra é respostas ÷ (respostas + o que falta na fila): cada carta que volta conta como mais uma, e a barra só enche quando a fila acaba de verdade.
+
+Lição: teste com outra pessoa acha em minutos o que os testes automáticos não pegam: sobreposição de áudio, um número que mente e, principalmente, uma palavra na tela que comunica outra coisa.
+
+---
+
+## Custo por transação (26/11)
+Pergunta de produto: quanto custa, em dinheiro, cada coisa que o Karta faz com IA? Antes, o app sabia contar tokens; agora sabe dizer quanto custaria pagar por eles.
+
+- **De onde vem o número:** cada resposta do Gemini traz os tokens usados e o modelo que respondeu de fato (`modelVersion`; o apelido `gemini-flash-lite-latest` é cobrado pelo modelo para o qual aponta). Tokens × preço do plano pago = US$; × cotação = R$. A tabela de preços e a conta ficam num módulo puro, `lib/v2/custos.js`, com testes (`npm run testar:custos`).
+- **Honestidade nos casos difíceis:** modelo fora da tabela usa o preço da família, o mais caro, e fica marcado como estimado. Modelo desconhecido fica sem preço, nunca zero. O pensamento é cobrado como saída, e a voz tem preço de áudio.
+- **Onde fica registrado:** cada transação grava o custo no próprio evento (criar baralho, acrescentar palavras, gravar áudios, analisar). A rota de voz devolve o custo num cabeçalho, porque a resposta é o próprio áudio.
+- **No painel:** custo médio de cada transação, custo de um baralho completo (criar + 2 gravações por palavra), projeção para 1.000 baralhos e a economia do banco de palavras.
+- **Primeiro número real (protótipo de 15/11):** no Módulo 2, 10 palavras custam ≈ R$ 0,01 a 0,02 com o Flash-Lite contra R$ 0,17 com o 3.5 Flash. É de 9 a 14 vezes menos, e o grosso da diferença são 2.580 tokens de "pensamento" de que a tarefa não precisava. A escolha de modelo feita lá atrás, por qualidade e tempo, agora tem preço.
+- **Medição completa (baralho de 7 palavras, sem o banco):** criar custa **R$ 0,01**; o baralho completo, com 14 gravações, **R$ 0,07**; mil baralhos, cerca de R$ 66 por mês. A surpresa: **a voz é 80% do custo**, então a próxima economia é guardar os áudios no servidor e reaproveitá-los entre usuários, como o banco faz com o texto. A medição também mostrou que o problema do Módulo 1 é o tempo: o 3.5 Flash passou do limite de 45 s e o app caiu para o modelo reserva. Detalhes em [`docs/custos.md`](custos.md).
+
+---
+
 ## Próximas etapas
 - [x] Áudio de cada carta (Gemini TTS, com a voz do navegador como plano B)
 - [x] Exportação `.apkg` para o Anki

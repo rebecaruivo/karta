@@ -9,6 +9,7 @@ import { idiomaOpcional } from "@/lib/v2/idiomas.js";
 import dicionario from "@/lib/v2/dados/hsk.js";
 import { consultarBanco, concluirComBanco } from "@/lib/v2/bancoPalavras.js";
 import { bancoPalavrasPostgres } from "@/lib/v2/bancoPalavrasPostgres.js";
+import { somarCustos } from "@/lib/v2/custos.js";
 
 export const maxDuration = 60;
 
@@ -54,7 +55,7 @@ export async function POST(request) {
     resultados: await concluirComBanco(lista, { doBanco, chaves, resultadosIA, banco, dicionario: dicionarioDoIdioma, versao: VERSAO_PROMPT, substituir: regerar }),
     doBanco: doBanco.size, versaoPrompt: VERSAO_PROMPT, ...extras,
   });
-  if (!faltam.length) return responder([], { modelo: "banco de palavras", chamadas: [] });
+  if (!faltam.length) return responder([], { modelo: "banco de palavras", chamadas: [], custo: somarCustos([]) });
 
   // 2. Só o que faltou vai para o Gemini (e só aqui a chave é necessária)
   const { chave } = escolherChave(request);
@@ -64,7 +65,8 @@ export async function POST(request) {
   for (const modelo of MODELOS) {
     try {
       const { resultados, chamadas } = await enriquecer(ai, modelo, { ...lista, words: faltam });
-      return responder(resultados, { chamadas, modelo });
+      // custo: só o que foi gerado agora; palavra que veio do banco custa zero
+      return responder(resultados, { chamadas, modelo, custo: somarCustos(chamadas) });
     } catch (e) {
       const status = Number(e?.status) || 0;
       ultimo = { status, detalhe: e?.message };

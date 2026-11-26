@@ -2,7 +2,7 @@
 // v2 · Novo baralho (página própria)
 // Modo A (seção 4): tema → Módulo 1 sugere palavras → você revisa → Módulos 2 e 3
 // Modo B (seção 3): você digita as palavras → Módulos 2 e 3
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { lerPalavras, validarTema, LIMITES } from "@/lib/v2/portaEntrada";
@@ -12,6 +12,7 @@ import { cabecalhosComChave } from "@/lib/chave";
 import { obterFacetasPadrao } from "@/lib/preferencias";
 import { FACETAS_PADRAO, cartasPorPalavra } from "@/lib/v2/pontes";
 import EscolhaFacetas, { resumoFacetas } from "@/components/v2/EscolhaFacetas";
+import { somarCustos } from "@/lib/v2/custos";
 import { IDIOMAS_V2_LISTA, IDIOMA_PADRAO, idiomaV2, classeEscrita } from "@/lib/v2/idiomas.js";
 
 const CHAVE_ULTIMO_IDIOMA = "karta:v2:ultimo-idioma";
@@ -40,6 +41,8 @@ export default function NovoBaralhoV2() {
   useEffect(() => { setFacetas(obterFacetasPadrao()); }, []);
   const porPalavra = cartasPorPalavra(facetas);
   const [etapa, setEtapa] = useState(null); // mensagem de progresso
+  // Custo das chamadas ao Módulo 1 (sugerir e "pedir mais"), somado ao do Módulo 2 no evento baralho_criado
+  const custosM1 = useRef([]);
   const [erro, setErro] = useState(null);
 
   // Modo B
@@ -86,6 +89,7 @@ export default function NovoBaralhoV2() {
     });
     const dados = await resp.json();
     if (!resp.ok) throw new Error(dados.erro || "Falha ao gerar as palavras.");
+    if (dados.custo) custosM1.current.push(dados.custo);
     return dados;
   }
 
@@ -167,10 +171,18 @@ export default function NovoBaralhoV2() {
       setEtapa("Módulo 3: montando as cartas…");
       const criadas = await repo.adicionarPalavras(deck.id, dados.resultados);
       await repo.atualizarBaralho({ ...deck, pipeline_status: "cards_ready", modelo: dados.modelo, versao_prompt: dados.versaoPrompt });
+      // Quanto custou criar este baralho: Módulo 1 (palavras sugeridas) + Módulo 2 (facetas do que não veio do banco)
+      const m1 = somarCustos(custosM1.current);
+      const m2 = somarCustos([dados.custo]);
+      const total = somarCustos([m1, m2]);
+      custosM1.current = [];
       registrarEvento("baralho_criado", {
         deck_id: deck.id,
         idioma,
-        payload: { creation_mode, level: nivel, n_palavras: criadas.palavras, n_cartas: criadas.cartas, n_do_banco: dados.doBanco ?? 0 },
+        payload: {
+          creation_mode, level: nivel, n_palavras: criadas.palavras, n_cartas: criadas.cartas, n_do_banco: dados.doBanco ?? 0,
+          custo_usd: total.usd, custo_m1_usd: m1.usd, custo_m2_usd: m2.usd, tokens: total.tokens, custo_estimado: total.estimado,
+        },
       });
       router.push(`/baralho/${deck.id}${dados.doBanco ? `?doBanco=${dados.doBanco}` : ""}`);
     } catch (err) {

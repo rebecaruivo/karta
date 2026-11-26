@@ -16,7 +16,9 @@
     "prototipo:modulo2": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --env-file=.env.local scripts/prototipo-modulo2.mjs",
     "testar:srs": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/testar-srs.mjs",
     "testar:progresso": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/testar-progresso.mjs",
-    "testar:painel": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/testar-painel.mjs"
+    "testar:painel": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/testar-painel.mjs",
+    "testar:custos": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/testar-custos.mjs",
+    "medir:custo": "node --env-file=.env.local --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/medir-custo.mjs"
   },
   "dependencies": {
     "@google/genai": "^1.0.0",

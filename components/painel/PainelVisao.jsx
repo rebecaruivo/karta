@@ -114,6 +114,27 @@ export default function PainelVisao({ p, geradoEm }) {
         </div>
       </Secao>
 
+      <Secao titulo="Quanto custa cada transação" sub="Tokens de cada chamada ao Gemini × preço do plano pago. Hoje cada pessoa usa a própria chave, na faixa grátis; estes números dizem quanto custaria se o Karta pagasse a conta. Últimos 30 dias.">
+        {!p.custos ? <p className="mu">Sem dados de custo neste ambiente.</p> : (
+          <>
+            <div className="pg-nums" style={{ marginBottom: 20 }}>{p.custos.destaques.map((d) => <Numero key={d.titulo} {...d} />)}</div>
+            <table className="pn-tab">
+              <thead><tr><th scope="col">Transação</th><th scope="col">Custo médio</th><th scope="col">Em reais</th></tr></thead>
+              <tbody>
+                {p.custos.linhas.map((l) => (
+                  <tr key={l.rotulo}>
+                    <td>{l.rotulo}<small>{[l.nota, l.amostra].filter(Boolean).join(" · ")}</small></td>
+                    <td className="pn-v">{l.usd}</td>
+                    <td className="pn-v">{l.brl}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="mu" style={{ fontSize: 13, marginTop: 10 }}>{p.custos.nota}{p.custos.estimado && " Alguma chamada usou um modelo fora da tabela de preços: o valor dela foi estimado pelo preço da família."}</p>
+          </>
+        )}
+      </Secao>
+
       <Secao titulo="Banco de palavras" sub="Palavras já geradas ficam guardadas e são reaproveitadas por qualquer pessoa, sem gastar a chave do Gemini de novo.">
         {!p.banco ? <p className="mu">O banco de palavras ainda não foi criado neste ambiente.</p> : (
           <>

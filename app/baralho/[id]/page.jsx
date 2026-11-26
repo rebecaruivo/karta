@@ -12,6 +12,8 @@ import { obterModoAudio, podeGerarAudio } from "@/lib/preferencias";
 import { lerPalavras, LIMITES } from "@/lib/v2/portaEntrada";
 import { separarPorGloss, separarRepetidas, escritasDoBaralho } from "@/lib/v2/edicao";
 import { cabecalhosComChave } from "@/lib/chave";
+import { registrarEvento } from "@/lib/v2/eventos";
+import { somarCustos } from "@/lib/v2/custos";
 import { exportarApkgV2 } from "@/lib/v2/exportarApkg";
 import { facetasDoBaralho, cartasPorPalavra } from "@/lib/v2/pontes";
 import { resumoFacetas } from "@/components/v2/EscolhaFacetas";
@@ -20,7 +22,8 @@ import { idiomaV2, leituraDe, classeEscrita, classeComGenero } from "@/lib/v2/id
 const MAIS_POR_VEZ = 5;
 
 // Chama o Módulo 2 (rota do servidor) para uma lista de palavras
-async function chamarModulo2(deck, palavras, { regerar = false } = {}) {
+// custosM1: o que a IA gastou sugerindo essas palavras (Acrescentar → pedir à IA), para o custo da operação inteira
+async function chamarModulo2(deck, palavras, { regerar = false, custosM1 = [] } = {}) {
   const wordList = {
     origin: deck.creation_mode === "theme" ? "theme" : "words", theme: deck.theme ?? null, target_language: deck.target_language, level: deck.level,
     words: palavras.map((p, i) => ({ id: `w${i + 1}`, gloss: p.gloss, lemma: p.lemma ?? null, sense_hint: p.sense_hint ?? null, origin: p.origin ?? "user" })),
@@ -28,6 +31,11 @@ async function chamarModulo2(deck, palavras, { regerar = false } = {}) {
   const resp = await fetch("/api/v2/enriquecer", { method: "POST", headers: cabecalhosComChave(), body: JSON.stringify({ wordList, regerar }) });
   const dados = await resp.json();
   if (!resp.ok) throw new Error(dados.erro || "Falha ao gerar as facetas.");
+  const m1 = somarCustos(custosM1), m2 = somarCustos([dados.custo]), total = somarCustos([m1, m2]);
+  registrarEvento("palavras_acrescentadas", {
+    deck_id: deck.id, idioma: deck.target_language,
+    payload: { n_palavras: dados.resultados.length, n_do_banco: dados.doBanco ?? 0, regerar, custo_usd: total.usd, custo_m1_usd: m1.usd, custo_m2_usd: m2.usd, tokens: total.tokens, custo_estimado: total.estimado },
+  });
   return dados.resultados;
 }
 
@@ -42,6 +50,7 @@ function Acrescentar({ deck, palavras, cartasPorPalavra, aoTerminar, aoFechar })
   // Tema para o "pedir à IA": o do baralho, se houver; senão, a pessoa digita (o nome do baralho não serve de tema)
   const [tema, setTema] = useState(deck.theme ?? "");
   const [pedindoIA, setPedindoIA] = useState(false); // o campo de tema só aparece depois de clicar
+  const [custosM1, setCustosM1] = useState([]);
   const temaLimpo = tema.trim();
 
   // Junta na lista, sem repetir o que já está nela nem o que o baralho já tem
@@ -66,6 +75,7 @@ function Acrescentar({ deck, palavras, cartasPorPalavra, aoTerminar, aoFechar })
       const resp = await fetch("/api/v2/palavras", { method: "POST", headers: cabecalhosComChave(), body: JSON.stringify({ theme: temaLimpo.slice(0, LIMITES.maxTema), level: deck.level, count: MAIS_POR_VEZ, existing_words: existentes, target_language: deck.target_language }) });
       const dados = await resp.json();
       if (!resp.ok) throw new Error(dados.erro || "Falha ao buscar palavras.");
+      if (dados.custo) setCustosM1((c) => [...c, dados.custo]);
       if (dados.refinar) throw new Error(`A IA não conseguiu sugerir palavras para “${temaLimpo}”.${dados.refinar.length ? ` Experimente: ${dados.refinar.join(", ")}.` : ""}`);
       if (!dados.wordList.words.length) throw new Error("A IA não encontrou palavras novas para esse tema.");
       juntar(dados.wordList.words.map((w) => ({ gloss: w.gloss, lemma: w.lemma, sense_hint: null, origin: "ai" })));
@@ -79,7 +89,7 @@ function Acrescentar({ deck, palavras, cartasPorPalavra, aoTerminar, aoFechar })
     setLista(validas);
     setErro(null); setEtapa(`Módulo 2: gerando as facetas de ${validas.length} palavras…`);
     try {
-      const resultados = await chamarModulo2(deck, validas);
+      const resultados = await chamarModulo2(deck, validas, { custosM1 });
       const { novas, repetidas } = separarRepetidas(resultados.filter((r) => r.facets?.length), palavras);
       const falharam = resultados.filter((r) => !r.facets?.length);
       setEtapa("Módulo 3: montando as cartas…");

@@ -9,6 +9,7 @@ import { calcularProgresso, resumoParaIA } from "@/lib/v2/progresso";
 import { MINIMO_RESPOSTAS, NOMES_CARTAS } from "@/lib/v2/analise";
 import { idiomaV2 } from "@/lib/v2/idiomas";
 import { cabecalhosComChave } from "@/lib/chave";
+import { registrarEvento } from "@/lib/v2/eventos";
 
 // Escala de um tom (do claro ao escuro), validada para daltonismo: nova → aprendendo → firme
 const ETAPAS = [
@@ -89,6 +90,7 @@ function Analise({ progresso, decks }) {
       const resp = await fetch("/api/v2/analise", { method: "POST", headers: cabecalhosComChave(), body: JSON.stringify({ resumo: resumoParaIA(progresso, { idiomas }) }) });
       const dados = await resp.json();
       setEstado(resp.ok ? dados : { erro: dados.erro || "Não consegui analisar agora." });
+      if (resp.ok && dados.custo) registrarEvento("analise_gerada", { payload: { custo_usd: dados.custo.usd, tokens: dados.custo.tokens, custo_estimado: dados.custo.estimado, modelo: dados.custo.modelo } });
     } catch { setEstado({ erro: "Não consegui analisar agora." }); }
   }
   if (faltam > 0) return <p className="mu">A análise com IA aparece depois de {MINIMO_RESPOSTAS} cartas respondidas nos últimos 30 dias (faltam {faltam}).</p>;

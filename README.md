@@ -70,6 +70,7 @@ Montar um baralho bom de vocabulário dá trabalho: escolher as palavras do nív
 | Arquitetura que permite trocar o armazenamento | [`lib/v2/adaptadores.js`](lib/v2/adaptadores.js): navegador e servidor com as mesmas operações; os mesmos testes do repositório rodam nos dois |
 | Segurança de dados por usuário | [`lib/v2/dadosServidor.js`](lib/v2/dadosServidor.js): usuário vindo da sessão, filtro em toda consulta, sem sobrescrever dado alheio, sem injeção de SQL (com testes) |
 | Análise de dados com IA | [`lib/v2/progresso.js`](lib/v2/progresso.js) calcula as métricas; [`lib/v2/analise.js`](lib/v2/analise.js) manda ao Gemini só números agregados e recebe um diagnóstico com formato obrigatório |
+| Saber quanto custa | [`lib/v2/custos.js`](lib/v2/custos.js) transforma os tokens de cada chamada em US$ e R$; o painel mostra o custo por transação (baralho, palavra, áudio, análise) e a economia do banco de palavras. Método e medições em [`docs/custos.md`](docs/custos.md) |
 | Protótipo antes de construir | [`scripts/prototipo-modulo2.mjs`](scripts/prototipo-modulo2.mjs) mediu qualidade, custo e tempo de dois modelos antes da escolha |
 
 ## Como funciona
